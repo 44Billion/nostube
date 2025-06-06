@@ -1,18 +1,8 @@
+import { VideoEvent } from '@/utils/video-event';
 import { createContext, useContext, useEffect, useRef, useState, useCallback } from 'react';
 import { useInView } from 'react-intersection-observer';
 
-interface VideoCache {
-  id: string;
-  identifier: string;
-  title: string;
-  description: string;
-  thumb: string;
-  pubkey: string;
-  created_at: number;
-  duration: number;
-  tags: string[];
-  searchText: string;
-}
+type VideoCache = VideoEvent;
 
 interface VideoCacheContextType {
   videos: VideoCache[];
@@ -82,7 +72,6 @@ export function VideoCacheProvider({ children }: { children: React.ReactNode }) 
           'wss://relay.nostr.band',
           'wss://nos.lol',
           'wss://relay.damus.io',
-          'wss://haven.slidestr.net'
         ],
       },
     });

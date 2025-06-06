@@ -1,18 +1,7 @@
 import { SimplePool } from "nostr-tools";
-import type { NostrEvent } from "@nostrify/nostrify";
+import { VideoEvent, processEvents } from "../utils/video-event";
 
-interface VideoCache {
-  id: string;
-  identifier: string;
-  title: string;
-  description: string;
-  thumb: string;
-  pubkey: string;
-  created_at: number;
-  duration: number;
-  tags: string[];
-  searchText: string;
-}
+type VideoCache = VideoEvent;
 
 let videos: VideoCache[] = [];
 const pool = new SimplePool();
@@ -28,52 +17,7 @@ let relayUrls = [
   "wss://relay.nostr.band",
   "wss://nos.lol",
   "wss://relay.damus.io",
-  "wss://haven.slidestr.net",
 ];
-
-// Create an in-memory index for fast text search
-function createSearchIndex(video: VideoCache): string {
-  return `${video.title} ${video.description} ${video.tags.join(
-    " "
-  )}`.toLowerCase();
-}
-
-// Process Nostr events into cache entries
-function processEvents(events: NostrEvent[]): VideoCache[] {
-  return events
-    .map((event) => {
-      const title = event.tags.find((t) => t[0] === "title")?.[1] || "";
-      const description =
-        event.tags.find((t) => t[0] === "description")?.[1] ||
-        event.content ||
-        "";
-      const thumb = event.tags.find((t) => t[0] === "thumb")?.[1] || "";
-      const duration = parseInt(
-        event.tags.find((t) => t[0] === "duration")?.[1] || "0"
-      );
-      const identifier = event.tags.find((t) => t[0] === "d")?.[1] || "";
-      const tags = event.tags.filter((t) => t[0] === "t").map((t) => t[1]);
-
-      const video = {
-        id: event.id,
-        identifier,
-        title,
-        description,
-        thumb,
-        pubkey: event.pubkey,
-        created_at: event.created_at,
-        duration,
-        tags,
-        searchText: "",
-      };
-
-      // Create search index
-      video.searchText = createSearchIndex(video);
-
-      return video;
-    })
-    .filter((video) => video.title && video.thumb && video.identifier);
-}
 
 async function loadVideoBatch(): Promise<boolean> {
   try {
@@ -82,13 +26,13 @@ async function loadVideoBatch(): Promise<boolean> {
       relayUrls.map(async (relayUrl) => {
         const lastTimestamp = relayTimestamps.get(relayUrl);
         const filter = {
-          kinds: [34235,34236,21,22],
+          kinds: [34235], // 34236, 21, 22],
           limit: BATCH_SIZE,
           ...(lastTimestamp ? { until: lastTimestamp } : {}),
         };
 
         const events = await pool.querySync([relayUrl], filter);
-        
+
         if (events.length > 0) {
           // Update last timestamp for this relay
           const minTimestamp = Math.min(...events.map((e) => e.created_at));
@@ -111,13 +55,15 @@ async function loadVideoBatch(): Promise<boolean> {
     }
 
     // Process and add new videos
-    const newVideos = processEvents(uniqueEvents);
-    
+    const newVideos = processEvents(uniqueEvents, relayUrls);
+
     // Filter out duplicates based on id
     const existingIds = new Set(videos.map((v) => v.id));
     const uniqueNewVideos = newVideos.filter((v) => !existingIds.has(v.id));
 
-    videos = [...videos, ...uniqueNewVideos];
+    videos = [...videos, ...uniqueNewVideos].sort(
+      (a, b) => b.created_at - a.created_at
+    );
 
     // Update all tags
     const allTags = new Set<string>();
@@ -126,10 +72,12 @@ async function loadVideoBatch(): Promise<boolean> {
     });
 
     // Check if any relay still has more events
-    const hasMore = relayUrls.some((relayUrl) => {
-      const lastTimestamp = relayTimestamps.get(relayUrl);
-      return lastTimestamp !== undefined;
-    });
+    const hasMore = Boolean(
+      relayUrls.some((relayUrl) => {
+        const lastTimestamp = relayTimestamps.get(relayUrl);
+        return lastTimestamp !== undefined && typeof lastTimestamp === "number";
+      })
+    );
 
     // Notify about progress
     self.postMessage({
@@ -148,7 +96,7 @@ async function loadVideoBatch(): Promise<boolean> {
 
 async function startLoading() {
   if (isLoading) return;
-  
+
   isLoading = true;
   relayTimestamps.clear();
 
@@ -183,6 +131,10 @@ self.onmessage = async (e: MessageEvent) => {
 
       if (!isLoading && hasMoreVideos) {
         await loadVideoBatch();
+        self.postMessage({
+          type: "SEARCH_RESULTS",
+          results: videos,
+        });
       }
       break;
 

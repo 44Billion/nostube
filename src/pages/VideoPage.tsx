@@ -12,23 +12,10 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { formatDistance } from "date-fns";
 import { Separator } from "@/components/ui/separator";
-import { useAppContext } from "@/hooks/useAppContext";
 import { useEffect } from "react";
-
-interface VideoData {
-  id: string;
-  title: string;
-  description: string;
-  url: string;
-  mime: string;
-  thumb: string;
-  duration: number;
-  dimensions?: string;
-  size?: number;
-  tags: string[];
-  pubkey: string;
-  created_at: number;
-}
+import { processEvent, VideoEvent } from "@/utils/video-event";
+import { nip19 } from "nostr-tools";
+import { EventPointer } from "nostr-tools/nip19";
 
 function formatFileSize(bytes: number): string {
   const units = ["B", "KB", "MB", "GB"];
@@ -44,29 +31,32 @@ function formatFileSize(bytes: number): string {
 }
 
 export function VideoPage() {
-  const { id } = useParams<{ id: string }>();
+  const { nevent } = useParams<{ nevent: string }>();
   const { nostr } = useNostr();
-  const { presetRelays } = useAppContext();
+  const { id, relays, author, kind } = nip19.decode(nevent ?? "").data as EventPointer;
 
-  const { data: video } = useQuery<VideoData | null>({
-    queryKey: ["video", id],
+  const { data: video } = useQuery<VideoEvent | null>({
+    queryKey: ["video", nevent],
     queryFn: async ({ signal }) => {
-      if (!id) return null;
+      if (!nevent) return null;
 
       const events = await nostr.query(
         [
           {
-            kinds: [34235],
-            "#d": [id],
+            authors: author ? [author] : undefined,
+            kinds: kind ? [kind] : undefined,
+            ids: [id],
           },
         ],
-        { signal, relays: presetRelays?.map((relay) => relay.url) }
+        { signal, relays }
       );
 
       if (!events.length) return null;
 
       const event = events[0];
-      return {
+      console.log(event);
+      return processEvent(event, relays || []);
+      /*{
         id: event.id,
         title: event.tags.find((t) => t[0] === "title")?.[1] || "",
         description:
@@ -84,12 +74,12 @@ export function VideoPage() {
         tags: event.tags.filter((t) => t[0] === "t").map((t) => t[1]),
         pubkey: event.pubkey,
         created_at: event.created_at,
-      };
+      };*/
     },
   });
 
-  const author = useAuthor(video?.pubkey || "");
-  const metadata = author.data?.metadata;
+  const authorMeta = useAuthor(video?.pubkey || "");
+  const metadata = authorMeta.data?.metadata;
   const authorName = metadata?.display_name || metadata?.name || video?.pubkey?.slice(0, 8);
 
   useEffect(() => {
@@ -119,7 +109,7 @@ export function VideoPage() {
 
                 <div className="flex items-start justify-between">
                   <Link
-                    to={`/author/${video.pubkey}`}
+                    to={`/author/${nip19.npubEncode(video.pubkey)}`}
                     className="flex items-center gap-4 hover:bg-accent p-2 rounded-lg transition-colors"
                   >
                     <Avatar>
@@ -179,7 +169,7 @@ export function VideoPage() {
         </div>
 
         <div className="w-80">
-          <VideoSuggestions currentVideoId={video.id} />
+          <VideoSuggestions currentVideoId={video.id} relays={relays || []} />
         </div>
       </div>
     </div>

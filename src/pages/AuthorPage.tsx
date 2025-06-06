@@ -1,18 +1,20 @@
-import { useParams } from 'react-router-dom';
-import { useAuthor } from '@/hooks/useAuthor';
-import { useNostr } from '@nostrify/react';
-import { useQuery } from '@tanstack/react-query';
-import { VideoCard } from '@/components/VideoCard';
-import { FollowButton } from '@/components/FollowButton';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Badge } from '@/components/ui/badge';
-import { Link } from 'lucide-react';
-import { formatDistanceToNow } from 'date-fns';
-import { useAppContext } from '@/hooks/useAppContext';
+import { useParams } from "react-router-dom";
+import { useAuthor } from "@/hooks/useAuthor";
+import { useNostr } from "@nostrify/react";
+import { useQuery } from "@tanstack/react-query";
+import { VideoCard } from "@/components/VideoCard";
+import { FollowButton } from "@/components/FollowButton";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Badge } from "@/components/ui/badge";
+import { Link } from "lucide-react";
+import { formatDistanceToNow } from "date-fns";
+import { useAppContext } from "@/hooks/useAppContext";
+import { processEvents } from "@/utils/video-event";
+import { nip19 } from "nostr-tools";
 
 interface AuthorStats {
   videoCount: number;
@@ -22,7 +24,7 @@ interface AuthorStats {
 
 function AuthorProfile({ pubkey }: { pubkey: string }) {
   const { data: metadata, isLoading } = useAuthor(pubkey);
-  
+
   if (isLoading) {
     return (
       <div className="flex items-center gap-6">
@@ -67,7 +69,7 @@ function AuthorProfile({ pubkey }: { pubkey: string }) {
 
         <div className="flex items-center gap-4">
           {author?.website && (
-            <a 
+            <a
               href={author.website}
               target="_blank"
               rel="noopener noreferrer"
@@ -84,47 +86,31 @@ function AuthorProfile({ pubkey }: { pubkey: string }) {
 }
 
 export function AuthorPage() {
-  const { pubkey } = useParams<{ pubkey: string }>();
+  const { npub } = useParams<{ npub: string }>();
   const { nostr } = useNostr();
   const { presetRelays } = useAppContext();
+
+  const pubkey = nip19.decode(npub ?? "").data as string;
+
+  const relays = presetRelays?.map((relay) => relay.url) || [];
   // Query for author's videos
   const { data: videos = [], isLoading: isLoadingVideos } = useQuery({
-    queryKey: ['author-videos', pubkey],
+    queryKey: ["author-videos", pubkey],
     queryFn: async ({ signal }) => {
       if (!pubkey) return [];
-      
+
       const events = await nostr.query(
-        [{
-          kinds: [34235],
-          authors: [pubkey],
-          limit: 500,
-        }],
-        { signal, relays: presetRelays?.map((relay) => relay.url) }
+        [
+          {
+            kinds: [34235, 34236, 21, 22],
+            authors: [pubkey],
+            limit: 500,
+          },
+        ],
+        { signal, relays }
       );
 
-      return events
-        .map(event => {
-          const title = event.tags.find(t => t[0] === 'title')?.[1] || '';
-          const description = event.tags.find(t => t[0] === 'description')?.[1] || event.content || '';
-          const thumb = event.tags.find(t => t[0] === 'thumb')?.[1] || '';
-          const duration = parseInt(event.tags.find(t => t[0] === 'duration')?.[1] || '0');
-          const identifier = event.tags.find(t => t[0] === 'd')?.[1] || '';
-          const tags = event.tags.filter(t => t[0] === 't').map(t => t[1]);
-          
-          return {
-            id: event.id,
-            identifier,
-            title,
-            description,
-            thumb,
-            pubkey: event.pubkey,
-            created_at: event.created_at,
-            duration,
-            tags,
-          };
-        })
-        .filter(video => video.title && video.thumb && video.identifier)
-        .sort((a, b) => b.created_at - a.created_at);
+      return processEvents(events, relays)
     },
     enabled: !!pubkey,
   });
@@ -135,13 +121,14 @@ export function AuthorPage() {
   const stats: AuthorStats = {
     videoCount: videos.length,
     totalViews: 0, // Could be implemented with NIP-78 view counts
-    joinedDate: videos.length > 0 
-      ? new Date(Math.min(...videos.map(v => v.created_at * 1000)))
-      : new Date(),
+    joinedDate:
+      videos.length > 0
+        ? new Date(Math.min(...videos.map((v) => v.created_at * 1000)))
+        : new Date(),
   };
 
   // Get unique tags from all videos
-  const uniqueTags = Array.from(new Set(videos.flatMap(video => video.tags)))
+  const uniqueTags = Array.from(new Set(videos.flatMap((video) => video.tags)))
     .filter(Boolean)
     .sort();
 
@@ -159,7 +146,9 @@ export function AuthorPage() {
             </div>
             <div>
               <span className="text-muted-foreground">Joined</span>
-              <span className="ml-2">{formatDistanceToNow(stats.joinedDate, { addSuffix: true })}</span>
+              <span className="ml-2">
+                {formatDistanceToNow(stats.joinedDate, { addSuffix: true })}
+              </span>
             </div>
           </div>
 
@@ -196,7 +185,7 @@ export function AuthorPage() {
             <TabsContent value="tags" className="mt-6">
               <ScrollArea className="h-[400px]">
                 <div className="flex flex-wrap gap-2">
-                  {uniqueTags.map(tag => (
+                  {uniqueTags.map((tag) => (
                     <Badge key={tag} variant="secondary">
                       {tag}
                     </Badge>

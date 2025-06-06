@@ -38,6 +38,7 @@ export function VideoPlayer({ url, mime, poster, onTimeUpdate, className }: Vide
       ref={videoRef}
       className={className}
       controls
+      autoPlay
       poster={poster}
       onTimeUpdate={() => {
         if (onTimeUpdate && videoRef.current) {

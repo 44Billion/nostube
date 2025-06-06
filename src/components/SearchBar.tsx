@@ -1,12 +1,12 @@
-import { useEffect, useState } from 'react';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Card } from '@/components/ui/card';
-import { Search, X } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { useDebounce } from '@/hooks/useDebounce';
+import { useEffect, useState } from "react";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Card } from "@/components/ui/card";
+import { Search, X } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { useDebounce } from "@/hooks/useDebounce";
 
 interface SearchBarProps {
   allTags: string[];
@@ -15,29 +15,34 @@ interface SearchBarProps {
   className?: string;
 }
 
-export function SearchBar({ allTags, onSearch, onTagsChange, className }: SearchBarProps) {
-  const [searchTerm, setSearchTerm] = useState('');
+export function SearchBar({
+  allTags,
+  onSearch,
+  onTagsChange,
+  className,
+}: SearchBarProps) {
+  const [searchTerm, setSearchTerm] = useState("");
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [showTagMenu, setShowTagMenu] = useState(false);
   const debouncedSearch = useDebounce(searchTerm, 300);
 
-    useEffect(() => {
-      onSearch(debouncedSearch);
-    }, [debouncedSearch, onSearch]);
+  useEffect(() => {
+    onSearch(debouncedSearch);
+  }, [debouncedSearch, onSearch]);
 
   const toggleTag = (tag: string) => {
     const newTags = selectedTags.includes(tag)
-      ? selectedTags.filter(t => t !== tag)
+      ? selectedTags.filter((t) => t !== tag)
       : [...selectedTags, tag];
-    
+
     setSelectedTags(newTags);
     onTagsChange(newTags);
   };
 
   const clearSearch = () => {
-    setSearchTerm('');
+    setSearchTerm("");
     setSelectedTags([]);
-    onSearch('');
+    onSearch("");
     onTagsChange([]);
   };
 
@@ -77,7 +82,7 @@ export function SearchBar({ allTags, onSearch, onTagsChange, className }: Search
         <Card className="p-4">
           <ScrollArea className="h-[200px]">
             <div className="flex flex-wrap gap-2">
-              {allTags.map(tag => (
+              {allTags.map((tag) => (
                 <Badge
                   key={tag}
                   variant={selectedTags.includes(tag) ? "default" : "outline"}
@@ -94,7 +99,7 @@ export function SearchBar({ allTags, onSearch, onTagsChange, className }: Search
 
       {selectedTags.length > 0 && (
         <div className="flex flex-wrap gap-2">
-          {selectedTags.map(tag => (
+          {selectedTags.map((tag) => (
             <Badge
               key={tag}
               variant="secondary"

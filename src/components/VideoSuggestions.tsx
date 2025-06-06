@@ -1,18 +1,9 @@
-import { useNostr } from '@nostrify/react';
-import { useQuery } from '@tanstack/react-query';
-import { Link } from 'react-router-dom';
-import { useAuthor } from '@/hooks/useAuthor';
-import { Card } from '@/components/ui/card';
-
-interface VideoSuggestion {
-  id: string;
-  identifier: string;
-  title: string;
-  thumb: string;
-  duration: number;
-  pubkey: string;
-  created_at: number;
-}
+import { useNostr } from "@nostrify/react";
+import { useQuery } from "@tanstack/react-query";
+import { Link } from "react-router-dom";
+import { useAuthor } from "@/hooks/useAuthor";
+import { Card } from "@/components/ui/card";
+import { processEvent, VideoEvent } from "@/utils/video-event";
 
 function formatDuration(seconds: number): string {
   const hours = Math.floor(seconds / 3600);
@@ -20,22 +11,24 @@ function formatDuration(seconds: number): string {
   const remainingSeconds = seconds % 60;
 
   if (hours > 0) {
-    return `${hours}:${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
+    return `${hours}:${minutes.toString().padStart(2, "0")}:${remainingSeconds
+      .toString()
+      .padStart(2, "0")}`;
   }
-  return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+  return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`;
 }
 
-function VideoSuggestionItem({ video }: { video: VideoSuggestion }) {
+function VideoSuggestionItem({ video }: { video: VideoEvent }) {
   const author = useAuthor(video.pubkey);
   const metadata = author.data?.metadata;
   const name = metadata?.name || video.pubkey.slice(0, 8);
 
   return (
-    <Link to={`/video/${video.identifier}`}>
+    <Link to={`/video/${video.link}`}>
       <Card className="flex mb-4 hover:bg-accent transition-colors border-none">
         <div className="relative w-40 h-24 flex-shrink-0">
-          <img 
-            src={video.thumb} 
+          <img
+            src={video.thumb}
             alt={video.title}
             className="w-full h-full object-cover"
           />
@@ -54,53 +47,43 @@ function VideoSuggestionItem({ video }: { video: VideoSuggestion }) {
 
 interface VideoSuggestionsProps {
   currentVideoId?: string;
+  relays: string[];
 }
 
-export function VideoSuggestions({ currentVideoId }: VideoSuggestionsProps) {
+export function VideoSuggestions({
+  currentVideoId,
+  relays,
+}: VideoSuggestionsProps) {
   const { nostr } = useNostr();
-
-  const { data: suggestions = [] } = useQuery<VideoSuggestion[]>({
-    queryKey: ['video-suggestions', currentVideoId],
+  const { data: suggestions = [] } = useQuery<VideoEvent[]>({
+    queryKey: ["video-suggestions", currentVideoId],
     queryFn: async ({ signal }) => {
       const events = await nostr.query(
-        [{
-          kinds: [34235],
-          limit: 20,
-        }],
-        { signal }
+        [
+          {
+            kinds: [34235, 34236, 21, 22],
+            limit: 30,
+          },
+        ],
+        { signal, relays }
       );
 
       return events
-        .filter(event => {
-          const identifier = event.tags.find(t => t[0] === 'd')?.[1];
+        .filter((event) => {
+          const identifier = event.tags.find((t) => t[0] === "d")?.[1];
           return identifier !== currentVideoId;
         })
-        .map(event => {
-          const title = event.tags.find(t => t[0] === 'title')?.[1] || '';
-          const thumb = event.tags.find(t => t[0] === 'thumb')?.[1] || '';
-          const duration = parseInt(event.tags.find(t => t[0] === 'duration')?.[1] || '0');
-          const identifier = event.tags.find(t => t[0] === 'd')?.[1] || '';
-          
-          return {
-            id: event.id,
-            identifier,
-            title,
-            thumb,
-            duration,
-            pubkey: event.pubkey,
-            created_at: event.created_at,
-          };
-        })
-        .filter(video => video.title && video.thumb && video.identifier);
+        .map((event) => processEvent(event, relays))
+        .filter((video) => video) as VideoEvent[];
     },
   });
 
   return (
     /* <ScrollArea className="h-[calc(100vh-4rem)]"> */
-      <div className="pr-4">
-        {suggestions.map((video) => (
-          <VideoSuggestionItem key={video.id} video={video} />
-        ))}
-      </div>
+    <div className="pr-4">
+      {suggestions.map((video) => (
+        <VideoSuggestionItem key={video.id} video={video} />
+      ))}
+    </div>
   );
 }

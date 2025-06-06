@@ -2,18 +2,11 @@ import { Link } from 'react-router-dom';
 import { useAuthor } from '@/hooks/useAuthor';
 import { Card, CardContent } from '@/components/ui/card';
 import { formatDistance } from 'date-fns';
+import { VideoEvent } from '@/utils/video-event';
+import { nip19 } from 'nostr-tools';
 
 interface VideoCardProps {
-  video: {
-    id: string;
-    identifier: string;
-    title: string;
-    thumb: string;
-    pubkey: string;
-    created_at: number;
-    duration: number;
-    tags: string[];
-  };
+  video: VideoEvent;
   hideAuthor?: boolean;
 }
 
@@ -36,7 +29,7 @@ export function VideoCard({ video, hideAuthor }: VideoCardProps) {
   return (
     <Card className="hover:bg-accent transition-colors">
       <CardContent className="p-0">
-        <Link to={`/video/${video.identifier}`}>
+        <Link to={`/video/${video.link}`}>
           <div className="relative">
             <img 
               loading="lazy"
@@ -50,13 +43,13 @@ export function VideoCard({ video, hideAuthor }: VideoCardProps) {
           </div>
         </Link>
         <div className="p-4">
-          <Link to={`/video/${video.identifier}`}>
+          <Link to={`/video/${video.link}`}>
             <h3 className="font-medium line-clamp-2">{video.title}</h3>
           </Link>
           
           {!hideAuthor && (
             <Link 
-              to={`/author/${video.pubkey}`}
+              to={`/author/${nip19.npubEncode(video.pubkey)}`}
               className="block text-sm text-muted-foreground mt-2 hover:text-primary"
             >
               {name}

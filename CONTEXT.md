@@ -162,7 +162,7 @@ function Post({ event }: { event: NostrEvent }) {
   const author = useAuthor(event.pubkey);
   const metadata: NostrMetadata | undefined = author.data?.metadata;
 
-  const displayName = metadata?.display_name || metadata?.name || video?.pubkey.slice(0, 8);
+  const displayName = metadata?.display_name ?? metadata?.name ?? genUserName(event.pubkey);
   const profileImage = metadata?.picture;
 
   // ...render elements with this data
