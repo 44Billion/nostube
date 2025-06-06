@@ -7,6 +7,7 @@ import { Suspense } from 'react';
 import { AppProvider } from '@/components/AppProvider';
 import { AppConfig } from '@/contexts/AppContext';
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { VideoCacheProvider } from '@/contexts/VideoCacheContext';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -39,11 +40,13 @@ export function App() {
         <QueryClientProvider client={queryClient}>
           <NostrLoginProvider storageKey='nostr:login'>
             <NostrProvider>
-              <TooltipProvider>
-                <Suspense>
-                  <AppRouter />
-                </Suspense>
-              </TooltipProvider>
+              <VideoCacheProvider>
+                <TooltipProvider>
+                  <Suspense>
+                    <AppRouter />
+                  </Suspense>
+                </TooltipProvider>
+              </VideoCacheProvider>
             </NostrProvider>
           </NostrLoginProvider>
         </QueryClientProvider>

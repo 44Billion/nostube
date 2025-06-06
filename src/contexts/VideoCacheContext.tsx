@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { createContext, useContext, useEffect, useRef, useState } from 'react';
 import { useInView } from 'react-intersection-observer';
 
 interface VideoCache {
@@ -14,13 +14,21 @@ interface VideoCache {
   searchText: string;
 }
 
-interface LoadProgress {
-  count: number;
+interface VideoCacheContextType {
+  videos: VideoCache[];
+  allTags: string[];
+  isLoading: boolean;
   hasMore: boolean;
-  tags: string[];
+  totalVideos: number;
+  searchVideos: (query: string) => void;
+  filterByTags: (tags: string[]) => void;
+  clearCache: () => void;
+  loadMoreRef: (node?: Element | null) => void;
 }
 
-export function useVideoCache() {
+const VideoCacheContext = createContext<VideoCacheContextType | undefined>(undefined);
+
+export function VideoCacheProvider({ children }: { children: React.ReactNode }) {
   const worker = useRef<Worker>();
   const [videos, setVideos] = useState<VideoCache[]>([]);
   const [allTags, setAllTags] = useState<string[]>([]);
@@ -109,7 +117,7 @@ export function useVideoCache() {
     worker.current?.postMessage({ type: 'CLEAR_CACHE' });
   };
 
-  return {
+  const value = {
     videos,
     allTags,
     isLoading,
@@ -120,4 +128,18 @@ export function useVideoCache() {
     clearCache,
     loadMoreRef,
   };
+
+  return (
+    <VideoCacheContext.Provider value={value}>
+      {children}
+    </VideoCacheContext.Provider>
+  );
 }
+
+export function useVideoCache() {
+  const context = useContext(VideoCacheContext);
+  if (context === undefined) {
+    throw new Error('useVideoCache must be used within a VideoCacheProvider');
+  }
+  return context;
+} 

@@ -4,7 +4,7 @@ import { ThemeToggle } from '@/components/ThemeToggle';
 import { Upload } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { SearchBar } from './SearchBar';
-import { useVideoCache } from '@/hooks/useVideoCache';
+import { useVideoCache } from '@/contexts/VideoCacheContext';
 
 export function Header() {
   const { allTags, searchVideos, filterByTags } = useVideoCache();

@@ -1,7 +1,7 @@
-import { useVideoCache } from '@/hooks/useVideoCache';
 import { VideoCard } from '@/components/VideoCard';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useVideoCache } from '@/contexts/VideoCacheContext';
 import { Loader2 } from 'lucide-react';
 
 function VideoCardSkeleton() {
