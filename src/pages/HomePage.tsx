@@ -22,7 +22,7 @@ function formatDuration(seconds: number): string {
 function VideoCard({ video }: { video: any }) {
   const author = useAuthor(video.pubkey);
   const metadata = author.data?.metadata;
-  const name = metadata?.name || video.pubkey.slice(0, 8);
+  const name = metadata?.display_name || metadata?.name || video?.pubkey.slice(0, 8);
 
   return (
     <Link to={`/video/${video.identifier}`}>

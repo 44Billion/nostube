@@ -89,7 +89,7 @@ export function VideoPage() {
 
   const author = useAuthor(video?.pubkey || "");
   const metadata = author.data?.metadata;
-  const authorName = metadata?.name || video?.pubkey.slice(0, 8);
+  const authorName = metadata?.display_name || metadata?.name || video?.pubkey.slice(0, 8);
 
   if (!video) {
     return <div>Video not found</div>;

@@ -3,7 +3,6 @@ import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { useAuthor } from '@/hooks/useAuthor';
 import { Card } from '@/components/ui/card';
-import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface VideoSuggestion {
   id: string;
@@ -97,12 +96,11 @@ export function VideoSuggestions({ currentVideoId }: VideoSuggestionsProps) {
   });
 
   return (
-    <ScrollArea className="h-[calc(100vh-4rem)]">
+    /* <ScrollArea className="h-[calc(100vh-4rem)]"> */
       <div className="pr-4">
         {suggestions.map((video) => (
           <VideoSuggestionItem key={video.id} video={video} />
         ))}
       </div>
-    </ScrollArea>
   );
 }
