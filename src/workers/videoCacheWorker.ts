@@ -106,12 +106,30 @@ async function startLoading() {
   self.postMessage({ type: "LOAD_COMPLETE", count: videos.length });
 }
 
+let query: string;
+let tags: string[] = [];
+
+const updateQuery = () => {
+  let results: VideoCache[];
+
+  results = query
+    ? videos.filter((video) => video.searchText.includes(query))
+    : videos;
+
+  results = tags.length
+    ? results.filter((video) => tags.some((tag) => video.tags.includes(tag)))
+    : results;
+
+  self.postMessage({
+    type: "SEARCH_RESULTS",
+    results: results,
+  });
+};
+
 // Handle messages from main thread
 self.onmessage = async (e: MessageEvent) => {
   const { type, data } = e.data;
-  let query: string;
-  let tags: string[];
-  let results: VideoCache[];
+
   let allTags: Set<string>;
 
   switch (type) {
@@ -120,10 +138,7 @@ self.onmessage = async (e: MessageEvent) => {
         relayUrls = data.relayUrls;
       }
       await startLoading();
-      self.postMessage({
-        type: "SEARCH_RESULTS",
-        results: videos,
-      });
+      updateQuery();
       break;
 
     case "LOAD_MORE":
@@ -131,37 +146,18 @@ self.onmessage = async (e: MessageEvent) => {
 
       if (!isLoading && hasMoreVideos) {
         await loadVideoBatch();
-        self.postMessage({
-          type: "SEARCH_RESULTS",
-          results: videos,
-        });
+        updateQuery();
       }
       break;
 
     case "SEARCH":
       query = data.toLowerCase();
-      results = query
-        ? videos.filter((video) => video.searchText.includes(query))
-        : videos;
-
-      self.postMessage({
-        type: "SEARCH_RESULTS",
-        results: results,
-      });
+      updateQuery();
       break;
 
     case "FILTER_TAGS":
       tags = data as string[];
-      results = tags.length
-        ? videos.filter((video) =>
-            tags.every((tag) => video.tags.includes(tag))
-          )
-        : videos;
-
-      self.postMessage({
-        type: "SEARCH_RESULTS",
-        results: results,
-      });
+      updateQuery();
       break;
 
     case "GET_ALL_TAGS":
