@@ -6,8 +6,9 @@ export function MainLayout() {
   return (
     <div className="min-h-screen">
       <Header />
-      <DisclaimerBanner />
       <main className="bg-background">
+      <DisclaimerBanner />
+
         <Outlet />
       </main>
     </div>

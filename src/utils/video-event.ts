@@ -4,7 +4,7 @@ import { nip19 } from "nostr-tools";
 
 export interface VideoEvent {
   id: string;
-  identifier: string;
+  kind: number;
   title: string;
   description: string;
   thumb: string;
@@ -35,9 +35,9 @@ export function processEvents(events: NostrEvent[], relays: string[]): VideoEven
     .filter(
       (video): video is VideoEvent =>
         video !== undefined &&
-        Boolean(video.title) &&
-        Boolean(video.thumb || video.description) &&
-        Boolean(video.identifier)
+        Boolean(video.url) &&
+       // Boolean(video.thumb || video.description) &&
+        Boolean(video.id)
     );
 }
 
@@ -57,29 +57,33 @@ export function processEvent(
         imetaValues.set(key, value);
       }
     }
-    console.log("event", event);
 
     const url = imetaValues.get("url");
     const mimeType = imetaValues.get("m");
     const image = imetaValues.get("image");
+    const thumb = imetaValues.get("thumb");
 
+    
     const alt = imetaValues.get("alt") || event.content || "";
     const blurhash = imetaValues.get("blurhash");
     const identifier = event.tags.find((t) => t[0] === "d")?.[1] || "";
     const tags = event.tags.filter((t) => t[0] === "t").map((t) => t[1]);
-
+    const duration = parseInt(
+      event.tags.find((t) => t[0] === "duration")?.[1] || "0"
+    );
     // Only process if it's a video
     //if (!url || !mimeType?.startsWith('video/')) return null;
 
     const video = {
       id: event.id,
+      kind: event.kind,
       identifier,
-      title: alt,
+      title: event.tags.find((t) => t[0] === "title")?.[1]  || alt,
       description: event.content || "",
-      thumb: image || `${videoThumbService}/${url}` || blurHashToDataURL(blurhash) || "",
+      thumb: image || thumb || `${videoThumbService}/${url}` || blurHashToDataURL(blurhash) || "",
       pubkey: event.pubkey,
       created_at: event.created_at,
-      duration: 0, // Duration not available in new format
+      duration,
       tags,
       searchText: "",
       url,
@@ -93,6 +97,7 @@ export function processEvent(
 
     // Create search index
     video.searchText = createSearchIndex(video);
+    console.log("event", event, video);
 
     return video;
   } else {
@@ -113,7 +118,7 @@ export function processEvent(
 
     const video = {
       id: event.id,
-
+      kind: event.kind,
       identifier,
       title,
       description,
@@ -136,6 +141,8 @@ export function processEvent(
 
     // Create search index
     video.searchText = createSearchIndex(video);
+
+    console.log("event", event, video);
 
     return video;
   }

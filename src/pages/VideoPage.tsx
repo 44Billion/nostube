@@ -34,7 +34,8 @@ function formatFileSize(bytes: number): string {
 export function VideoPage() {
   const { nevent } = useParams<{ nevent: string }>();
   const { nostr } = useNostr();
-  const { id, relays, author, kind } = nip19.decode(nevent ?? "").data as EventPointer;
+  const { id, relays, author, kind } = nip19.decode(nevent ?? "")
+    .data as EventPointer;
 
   const { data: video, isLoading } = useQuery<VideoEvent | null>({
     queryKey: ["video", nevent],
@@ -63,7 +64,11 @@ export function VideoPage() {
 
   const authorMeta = useAuthor(video?.pubkey || "");
   const metadata = authorMeta.data?.metadata;
-  const authorName = metadata?.display_name || metadata?.name || video?.pubkey?.slice(0, 8) || "";
+  const authorName =
+    metadata?.display_name ||
+    metadata?.name ||
+    video?.pubkey?.slice(0, 8) ||
+    "";
 
   useEffect(() => {
     console.log(video);
@@ -72,15 +77,19 @@ export function VideoPage() {
   // Scroll to top when video is loaded
   useEffect(() => {
     if (video) {
-      window.scrollTo({ top: 0, behavior: 'instant' });
+      window.scrollTo({ top: 0, behavior: "instant" });
     }
   }, [video]);
 
-  if (isLoading) {
-    return (
-      <div className="container mx-auto py-6">
-        <div className="flex gap-6 flex-col md:flex-row">
-          <div className="flex-1">
+  if (!isLoading && !video) {
+    return <div>Video not found</div>;
+  }
+
+  return (
+    <div className="container mx-auto py-6">
+      <div className="flex gap-6 flex-col lg:flex-row">
+        <div className="flex-1">
+          {isLoading ? (
             <Card>
               <CardContent className="p-0">
                 <Skeleton className="w-full aspect-video" />
@@ -114,111 +123,94 @@ export function VideoPage() {
                 </div>
               </CardHeader>
             </Card>
-            <div className="mt-6">
-              <Skeleton className="h-32 w-full" />
-            </div>
-          </div>
-          <div className="w-80">
-            <div className="space-y-4">
-              {Array.from({ length: 4 }).map((_, i) => (
-                <div key={i} className="space-y-2">
-                  <Skeleton className="w-full aspect-video" />
-                  <Skeleton className="h-4 w-3/4" />
-                  <Skeleton className="h-3 w-1/2" />
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
+          ) : (
+            <Card>
+              <CardContent className="p-0">
+                <VideoPlayer
+                  url={video.url || ""}
+                  mime={video.mimeType || ""}
+                  poster={video.thumb || ""}
+                  className="w-full aspect-video"
+                />
+              </CardContent>
+              <CardHeader>
+                <div className="flex flex-col gap-4">
+                  <h1 className="text-2xl font-bold">{video.title}</h1>
 
-  if (!video) {
-    return <div>Video not found</div>;
-  }
-
-  return (
-    <div className="container mx-auto py-6">
-      <div className="flex gap-6 flex-col md:flex-row">
-        <div className="flex-1">
-          <Card>
-            <CardContent className="p-0">
-              <VideoPlayer
-                url={video.url || ""}
-                mime={video.mimeType || ""}
-                poster={video.thumb || ""}
-                className="w-full aspect-video"
-              />
-            </CardContent>
-            <CardHeader>
-              <div className="flex flex-col gap-4">
-                <h1 className="text-2xl font-bold">{video.title}</h1>
-
-                <div className="flex items-start justify-between">
-                  <Link
-                    to={`/author/${nip19.npubEncode(video.pubkey)}`}
-                    className="flex items-center gap-4 hover:bg-accent p-2 rounded-lg transition-colors"
-                  >
-                    <Avatar>
-                      <AvatarImage src={metadata?.picture} />
-                      <AvatarFallback>{authorName[0]}</AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <div className="font-semibold">{authorName}</div>
-                      <div className="text-sm text-muted-foreground">
-                        {formatDistance(
-                          new Date(video.created_at * 1000),
-                          new Date(),
-                          { addSuffix: true }
-                        )}
+                  <div className="flex items-start justify-between">
+                    <Link
+                      to={`/author/${nip19.npubEncode(video.pubkey)}`}
+                      className="flex items-center gap-4 hover:bg-accent p-2 rounded-lg transition-colors"
+                    >
+                      <Avatar>
+                        <AvatarImage src={metadata?.picture} />
+                        <AvatarFallback>{authorName[0]}</AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <div className="font-semibold">{authorName}</div>
+                        <div className="text-sm text-muted-foreground">
+                          {formatDistance(
+                            new Date(video.created_at * 1000),
+                            new Date(),
+                            { addSuffix: true }
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  </Link>
+                    </Link>
 
-                  <div className="flex items-center gap-2">
-                    <ButtonWithReactions
-                      eventId={video.id}
-                      authorPubkey={video.pubkey}
-                    />
-                    <FollowButton pubkey={video.pubkey} />
-                  </div>
-                </div>
-
-                <Separator />
-
-                {(video.dimensions || (video.size && video.size > 0)) && (
-                  <div className="text-sm text-muted-foreground space-x-4">
-                    {video.dimensions && <span>{video.dimensions}</span>}
-                    {video.size && video.size > 0 && (
-                      <span>{formatFileSize(video.size)}</span>
+                    {video && (
+                      <div className="flex items-center gap-2">
+                        <ButtonWithReactions
+                          eventId={video.id}
+                          authorPubkey={video.pubkey}
+                        />
+                        <FollowButton pubkey={video.pubkey} />
+                      </div>
                     )}
                   </div>
-                )}
 
-                {video.tags.length > 0 && (
-                  <div className="flex flex-wrap gap-2">
-                    {video.tags.map((tag) => (
-                      <Badge key={tag} variant="secondary">
-                        {tag}
-                      </Badge>
-                    ))}
+                  <Separator />
+
+                  {video &&
+                    (video.dimensions || (video.size && video.size > 0)) && (
+                      <div className="text-sm text-muted-foreground space-x-4">
+                        {video.dimensions && <span>{video.dimensions}</span>}
+                        {video.size && video.size > 0 && (
+                          <span>{formatFileSize(video.size)}</span>
+                        )}
+                      </div>
+                    )}
+
+                  {video && video.tags.length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                      {video.tags.map((tag) => (
+                        <Badge key={tag} variant="secondary">
+                          {tag}
+                        </Badge>
+                      ))}
+                    </div>
+                  )}
+
+                  <div className="whitespace-pre-wrap">
+                    {video?.description}
                   </div>
-                )}
+                </div>
+              </CardHeader>
+            </Card>
+          )}
 
-                <div className="whitespace-pre-wrap">{video.description}</div>
-              </div>
-            </CardHeader>
-          </Card>
+          {video && (
+            <div className="mt-6">
+              <VideoComments videoId={video.id} authorPubkey={video.pubkey} />
+            </div>
+          )}
+        </div>
 
-          <div className="mt-6">
-            <VideoComments videoId={video.id} authorPubkey={video.pubkey} />
+       
+          <div className="w-full lg:w-80">
+          {video && (<VideoSuggestions currentVideoId={video.id} relays={relays || []} />     )}
           </div>
-        </div>
-
-        <div className="w-80">
-          <VideoSuggestions currentVideoId={video.id} relays={relays || []} />
-        </div>
+   
       </div>
     </div>
   );

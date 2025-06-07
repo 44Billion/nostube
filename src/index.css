@@ -120,6 +120,7 @@
 
   media-controller {
     width: 100%;
+    align-content: center;
   }
 
   media-controller video {
@@ -128,6 +129,7 @@
 
   media-controller:fullscreen video {
     max-height: 100dvh;
+
   }
 
   media-control-bar * {

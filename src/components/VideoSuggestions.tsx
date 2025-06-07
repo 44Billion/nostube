@@ -32,9 +32,10 @@ function VideoSuggestionItem({ video }: { video: VideoEvent }) {
             alt={video.title}
             className="w-full h-full object-cover"
           />
+          {video.duration > 0 &&
           <div className="absolute bottom-1 right-1 bg-black/80 text-white px-1 rounded text-xs">
             {formatDuration(video.duration)}
-          </div>
+          </div>}
         </div>
         <div className="p-2">
           <div className="font-medium line-clamp-2 text-sm">{video.title}</div>
@@ -80,7 +81,7 @@ export function VideoSuggestions({
 
   return (
     /* <ScrollArea className="h-[calc(100vh-4rem)]"> */
-    <div className="pr-4">
+    <div className="pr-4 grid grid-cols-2 gap-4 lg:block">
       {suggestions.map((video) => (
         <VideoSuggestionItem key={video.id} video={video} />
       ))}

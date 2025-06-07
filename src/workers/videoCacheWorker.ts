@@ -17,6 +17,7 @@ let relayUrls = [
   "wss://relay.nostr.band",
   "wss://nos.lol",
   "wss://relay.damus.io",
+  "wss://haven.slidestr.net"
 ];
 
 async function loadVideoBatch(): Promise<boolean> {
@@ -26,7 +27,7 @@ async function loadVideoBatch(): Promise<boolean> {
       relayUrls.map(async (relayUrl) => {
         const lastTimestamp = relayTimestamps.get(relayUrl);
         const filter = {
-          kinds: [34235], // 34236, 21, 22],
+          kinds: [21, 34235], // 34235, 34236, 21, 22],
           limit: BATCH_SIZE,
           ...(lastTimestamp ? { until: lastTimestamp } : {}),
         };

@@ -51,7 +51,6 @@ export function VideoPlayer({ url, mime, poster, onTimeUpdate }: VideoPlayerProp
         <media-control-bar>
           <media-play-button />
           <media-time-display />
-          <media-progress-bar />
           <media-time-range />
           <media-mute-button />
           <media-volume-range />
