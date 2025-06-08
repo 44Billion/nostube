@@ -5,20 +5,27 @@ import { VideoEvent } from "@/utils/video-event";
 import { nip19 } from "nostr-tools";
 import { formatDuration } from "../lib/formatDuration";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { cn } from "@/lib/utils";
 
 interface VideoCardProps {
   video: VideoEvent;
   hideAuthor?: boolean;
+  videoType?: 'all' | 'shorts' | 'videos';
 }
 
-export function VideoCard({ video, hideAuthor }: VideoCardProps) {
+export function VideoCard({ video, hideAuthor, videoType = 'all' }: VideoCardProps) {
   const author = useAuthor(video.pubkey);
   const metadata = author.data?.metadata;
   const name =
     metadata?.display_name || metadata?.name || video?.pubkey.slice(0, 8);
 
+  const isShort = videoType === 'shorts';
+
   return (
-    <div>
+    <div className={cn(
+      "transition-all duration-200",
+      isShort && "max-w-[280px] mx-auto"
+    )}>
       <div className="p-0">
         <Link to={`/video/${video.link}`}>
           <div className="relative">
@@ -26,7 +33,10 @@ export function VideoCard({ video, hideAuthor }: VideoCardProps) {
               loading="lazy"
               src={video.thumb}
               alt={video.title}
-              className="w-full aspect-video object-cover rounded-lg"
+              className={cn(
+                "w-full object-cover rounded-lg",
+                isShort ? "aspect-[9/16]" : "aspect-video"
+              )}
             />
             {video.duration > 0 && (
               <div className="absolute bottom-2 right-2 bg-black/80 text-white px-1 rounded text-sm">

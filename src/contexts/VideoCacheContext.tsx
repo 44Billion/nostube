@@ -13,6 +13,7 @@ interface VideoCacheContextType {
   searchVideos: (query: string) => void;
   filterByTags: (tags: string[]) => void;
   clearCache: () => void;
+  setVideoTypes: (type: 'all' | 'shorts' | 'videos') => void;
   loadMoreRef: (node?: Element | null) => void;
 }
 
@@ -108,6 +109,13 @@ export function VideoCacheProvider({ children }: { children: React.ReactNode }) 
     worker.current?.postMessage({ type: 'CLEAR_CACHE' });
   }, []);
 
+  const setVideoTypes = useCallback((type: 'all' | 'shorts' | 'videos') => {
+    worker.current?.postMessage({
+      type: 'SET_VIDEO_TYPES',
+      data: type,
+    });
+  }, []);
+
   const value = {
     videos,
     allTags,
@@ -117,6 +125,7 @@ export function VideoCacheProvider({ children }: { children: React.ReactNode }) 
     searchVideos,
     filterByTags,
     clearCache,
+    setVideoTypes,
     loadMoreRef,
   };
 

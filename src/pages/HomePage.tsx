@@ -3,6 +3,9 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useVideoCache } from '@/contexts/VideoCacheContext';
 import { Loader2 } from 'lucide-react';
+import { VideoTypeSelection } from '@/components/VideoTypeSelection';
+import { cn } from '@/lib/utils';
+import { useAppContext } from '@/hooks/useAppContext';
 
 function VideoCardSkeleton() {
   return (
@@ -20,17 +23,28 @@ function VideoCardSkeleton() {
 }
 
 export function HomePage() {
+  const { config, updateConfig } = useAppContext();
   const { 
     videos,  
     isLoading, 
     hasMore,
     totalVideos,
     loadMoreRef,
+    setVideoTypes,
   } = useVideoCache();
+
+  const handleTypeChange = (value: 'all' | 'shorts' | 'videos') => {
+    updateConfig(current => ({ ...current, videoType: value }));
+    setVideoTypes(value);
+  };
 
   return (
     <div className="container mx-auto px-4 py-6">
       <div className="flex items-center justify-between mb-6">
+        <VideoTypeSelection 
+          selectedType={config.videoType}
+          onTypeChange={handleTypeChange}
+        />
 
         <div className="text-sm text-muted-foreground">
           {totalVideos} videos loaded
@@ -39,9 +53,14 @@ export function HomePage() {
 
       {videos.length > 0 ? (
         <>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <div className={cn(
+            "grid gap-6",
+            config.videoType === 'shorts' 
+              ? "grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5"
+              : "grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+          )}>
             {videos.map((video) => (
-              <VideoCard key={video.id} video={video} />
+              <VideoCard key={video.id} video={video} videoType={config.videoType} />
             ))}
           </div>
 

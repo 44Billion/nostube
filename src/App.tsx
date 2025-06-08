@@ -22,6 +22,7 @@ const queryClient = new QueryClient({
 const defaultConfig: AppConfig = {
   theme: "dark",
   relayUrl: "wss://haven.slidestr.net",
+  videoType: "videos",
 };
 
 const presetRelays = [

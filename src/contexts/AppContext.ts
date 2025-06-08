@@ -1,12 +1,15 @@
 import { createContext } from "react";
 
 export type Theme = "dark" | "light" | "system";
+export type VideoType = "all" | "shorts" | "videos";
 
 export interface AppConfig {
   /** Current theme */
   theme: Theme;
   /** Selected relay URL */
   relayUrl: string;
+  /** Selected video type */
+  videoType: VideoType;
 }
 
 export interface AppContextType {

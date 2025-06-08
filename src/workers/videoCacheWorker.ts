@@ -8,6 +8,7 @@ const pool = new SimplePool();
 const BATCH_SIZE = 50;
 let isLoading = false;
 let hasMoreVideos = true;
+let selectedVideoTypes: 'all' | 'shorts' | 'videos' = 'all';
 
 // Track last timestamp per relay
 const relayTimestamps = new Map<string, number>();
@@ -20,14 +21,26 @@ let relayUrls = [
   "wss://haven.slidestr.net"
 ];
 
+function getKindsForType(type: 'all' | 'shorts' | 'videos'): number[] {
+  switch (type) {
+    case 'shorts':
+      return [34236, 22];
+    case 'videos':
+      return [34235, 21];
+    default:
+      return [34235, 34236, 21, 22];
+  }
+}
+
 async function loadVideoBatch(): Promise<boolean> {
   try {
+    console.log(selectedVideoTypes,getKindsForType(selectedVideoTypes));
     // Query each relay separately to handle pagination per relay
     const results = await Promise.all(
       relayUrls.map(async (relayUrl) => {
         const lastTimestamp = relayTimestamps.get(relayUrl);
         const filter = {
-          kinds: [21, 34235], // 34235, 34236, 21, 22],
+          kinds: getKindsForType(selectedVideoTypes),
           limit: BATCH_SIZE,
           ...(lastTimestamp ? { until: lastTimestamp } : {}),
         };
@@ -177,6 +190,15 @@ self.onmessage = async (e: MessageEvent) => {
       relayTimestamps.clear();
       hasMoreVideos = true;
       await startLoading();
+      break;
+
+    case "SET_VIDEO_TYPES":
+      selectedVideoTypes = data;
+      videos = [];
+      relayTimestamps.clear();
+      hasMoreVideos = true;
+      await startLoading();
+      updateQuery();
       break;
   }
 };
