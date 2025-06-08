@@ -10,22 +10,29 @@ import { cn } from "@/lib/utils";
 interface VideoCardProps {
   video: VideoEvent;
   hideAuthor?: boolean;
-  videoType?: 'all' | 'shorts' | 'videos';
+  format: "vertical" | "horizontal" | "square";
 }
 
-export function VideoCard({ video, hideAuthor, videoType = 'all' }: VideoCardProps) {
+export function VideoCard({
+  video,
+  hideAuthor,
+  format = "square",
+}: VideoCardProps) {
   const author = useAuthor(video.pubkey);
   const metadata = author.data?.metadata;
   const name =
     metadata?.display_name || metadata?.name || video?.pubkey.slice(0, 8);
 
-  const isShort = videoType === 'shorts';
-
+  const aspectRatio =
+    format == "vertical"
+      ? "aspect-[9/16]"
+      : format == "square"
+      ? "aspect-[1/1]"
+      : "aspect-video";
+  const maxWidth = format == "vertical" && "max-w-[280px] mx-auto";
+  
   return (
-    <div className={cn(
-      "transition-all duration-200",
-      isShort && "max-w-[280px] mx-auto"
-    )}>
+    <div className={cn("transition-all duration-200", maxWidth)}>
       <div className="p-0">
         <Link to={`/video/${video.link}`}>
           <div className="relative">
@@ -33,10 +40,7 @@ export function VideoCard({ video, hideAuthor, videoType = 'all' }: VideoCardPro
               loading="lazy"
               src={video.thumb}
               alt={video.title}
-              className={cn(
-                "w-full object-cover rounded-lg",
-                isShort ? "aspect-[9/16]" : "aspect-video"
-              )}
+              className={cn("w-full object-cover rounded-lg", aspectRatio)}
             />
             {video.duration > 0 && (
               <div className="absolute bottom-2 right-2 bg-black/80 text-white px-1 rounded text-sm">

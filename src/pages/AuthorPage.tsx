@@ -15,6 +15,7 @@ import { formatDistanceToNow } from "date-fns";
 import { useAppContext } from "@/hooks/useAppContext";
 import { processEvents } from "@/utils/video-event";
 import { nip19 } from "nostr-tools";
+import { CollapsibleText } from "@/components/ui/collapsible-text";
 
 interface AuthorStats {
   videoCount: number;
@@ -62,9 +63,10 @@ function AuthorProfile({ pubkey }: { pubkey: string }) {
         </div>
 
         {author?.about && (
-          <p className="text-muted-foreground whitespace-pre-wrap">
-            {author.about}
-          </p>
+          <CollapsibleText 
+            text={author.about} 
+            className="text-muted-foreground"
+          />
         )}
 
         <div className="flex items-center gap-4">
@@ -177,7 +179,7 @@ export function AuthorPage() {
               ) : videos.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                   {videos.map((video) => (
-                    <VideoCard key={video.id} video={video} hideAuthor />
+                    <VideoCard key={video.id} video={video} hideAuthor format="horizontal" />
                   ))}
                 </div>
               ) : (

@@ -38,6 +38,8 @@ export function HomePage() {
     setVideoTypes(value);
   };
 
+  const videoFormat =  config.videoType == 'shorts' ? 'vertical' : 'horizontal';
+
   return (
     <div className="container mx-auto px-4 py-6">
       <div className="flex items-center justify-between mb-6">
@@ -60,7 +62,7 @@ export function HomePage() {
               : "grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
           )}>
             {videos.map((video) => (
-              <VideoCard key={video.id} video={video} videoType={config.videoType} />
+              <VideoCard key={video.id} video={video} format={videoFormat} />
             ))}
           </div>
 

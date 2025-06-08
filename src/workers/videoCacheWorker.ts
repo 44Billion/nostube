@@ -1,5 +1,6 @@
 import { SimplePool } from "nostr-tools";
 import { VideoEvent, processEvents } from "../utils/video-event";
+import { getKindsForType, type VideoType } from "../lib/video-types";
 
 type VideoCache = VideoEvent;
 
@@ -8,7 +9,7 @@ const pool = new SimplePool();
 const BATCH_SIZE = 50;
 let isLoading = false;
 let hasMoreVideos = true;
-let selectedVideoTypes: 'all' | 'shorts' | 'videos' = 'all';
+let selectedVideoTypes: VideoType = 'all';
 
 // Track last timestamp per relay
 const relayTimestamps = new Map<string, number>();
@@ -21,20 +22,9 @@ let relayUrls = [
   "wss://haven.slidestr.net"
 ];
 
-function getKindsForType(type: 'all' | 'shorts' | 'videos'): number[] {
-  switch (type) {
-    case 'shorts':
-      return [34236, 22];
-    case 'videos':
-      return [34235, 21];
-    default:
-      return [34235, 34236, 21, 22];
-  }
-}
-
 async function loadVideoBatch(): Promise<boolean> {
   try {
-    console.log(selectedVideoTypes,getKindsForType(selectedVideoTypes));
+    console.log(selectedVideoTypes, getKindsForType(selectedVideoTypes));
     // Query each relay separately to handle pagination per relay
     const results = await Promise.all(
       relayUrls.map(async (relayUrl) => {

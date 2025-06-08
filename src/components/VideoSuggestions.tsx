@@ -4,6 +4,8 @@ import { Link } from "react-router-dom";
 import { useAuthor } from "@/hooks/useAuthor";
 import { Card } from "@/components/ui/card";
 import { processEvent, VideoEvent } from "@/utils/video-event";
+import { useAppContext } from "@/hooks/useAppContext";
+import { getKindsForType } from "@/lib/video-types";
 
 function formatDuration(seconds: number): string {
   const hours = Math.floor(seconds / 3600);
@@ -56,13 +58,15 @@ export function VideoSuggestions({
   relays,
 }: VideoSuggestionsProps) {
   const { nostr } = useNostr();
+  const { config } = useAppContext();
+
   const { data: suggestions = [] } = useQuery<VideoEvent[]>({
-    queryKey: ["video-suggestions", currentVideoId],
+    queryKey: ["video-suggestions", currentVideoId, config.videoType],
     queryFn: async ({ signal }) => {
       const events = await nostr.query(
         [
           {
-            kinds: [34235, 34236, 21, 22],
+            kinds: getKindsForType(config.videoType),
             limit: 30,
           },
         ],
