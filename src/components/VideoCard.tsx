@@ -6,6 +6,8 @@ import { nip19 } from "nostr-tools";
 import { formatDuration } from "../lib/formatDuration";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
+import { Card, CardContent } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface VideoCardProps {
   video: VideoEvent;
@@ -89,5 +91,30 @@ export function VideoCard({
         </div>
       </div>
     </div>
+  );
+}
+
+interface VideoCardSkeletonProps {
+  format: "vertical" | "horizontal" | "square";
+}
+
+export function VideoCardSkeleton({ format }: VideoCardSkeletonProps) {
+  const aspectRatio =
+    format == "vertical"
+      ? "aspect-[9/16]"
+      : format == "square"
+      ? "aspect-[1/1]"
+      : "aspect-video";
+  return (
+    <Card>
+      <CardContent className="p-0">
+        <Skeleton className={cn("w-full", aspectRatio)} />
+        <div className="p-4 space-y-2">
+          <Skeleton className="h-4 w-3/4" />
+          <Skeleton className="h-3 w-1/2" />
+          <Skeleton className="h-3 w-1/4" />
+        </div>
+      </CardContent>
+    </Card>
   );
 }

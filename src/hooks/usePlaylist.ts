@@ -56,10 +56,11 @@ export function usePlaylists() {
           }));
 
         return {
-          id: event.tags.find(t => t[0] === 'd')?.[1] || '',
+          identifier: event.tags.find(t => t[0] === 'd')?.[1] || '',
           name,
           description,
           videos,
+          eventId: event.id, // Keep eventId for deletion
         };
       });
     },
@@ -90,7 +91,6 @@ export function usePlaylists() {
         content: '', // Content can be empty as per NIP-51
       });
 
-      playlist.eventId = publishedEvent.id;
       return playlist;
     },
     onSuccess: () => {
@@ -111,7 +111,7 @@ export function usePlaylists() {
   };
 
   const addVideo = async (playlistId: string, videoId: string, videoTitle?: string) => {
-    const playlist = query.data?.find(p => p.id === playlistId);
+    const playlist = query.data?.find(p => p.identifier === playlistId);
     if (!playlist) throw new Error('Playlist not found');
 
     // Don't add if already exists
@@ -135,7 +135,7 @@ export function usePlaylists() {
   };
 
   const removeVideo = async (playlistId: string, videoId: string) => {
-    const playlist = query.data?.find(p => p.id === playlistId);
+    const playlist = query.data?.find(p => p.identifier === playlistId);
     if (!playlist) throw new Error('Playlist not found');
 
     const updatedPlaylist = {
@@ -146,13 +146,13 @@ export function usePlaylists() {
     await updatePlaylist.mutateAsync(updatedPlaylist);
   };
 
-  const deletePlaylist = async (eventId: string) => {
+  const deletePlaylist = async (identifier: string) => {
     if (!user?.pubkey) throw new Error('User not logged in');
 
     await publishEvent({
       kind: PLAYLIST_KIND,
       tags: [
-        ['d', playlistId],
+        ['d', identifier],
       ],
       content: '',
     });

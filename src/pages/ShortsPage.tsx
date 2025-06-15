@@ -4,7 +4,7 @@ import { useAppContext } from '@/hooks/useAppContext';
 import { VideoGrid } from '@/components/VideoGrid';
 import { useEffect } from 'react';
 
-export function HomePage() {
+export function ShortsPage() {
   const { config } = useAppContext();
   const { 
     videos,  
@@ -18,9 +18,8 @@ export function HomePage() {
     setLikedVideoIds
   } = useVideoCache();
 
-
   useEffect(() => {
-    setVideoType('videos');
+    setVideoType('shorts');
     setFollowedPubkeys([]);
     setLikedVideoIds([]);
     initSearch();
@@ -36,12 +35,11 @@ export function HomePage() {
 
       <VideoGrid 
         videos={videos} 
-        videoType={config.videoType} 
+        videoType={'shorts'} 
         isLoading={isLoading} 
         showSkeletons={true} 
       />
 
-      {/* Infinite scroll trigger */}
       <div 
         ref={loadMoreRef} 
         className="w-full py-8 flex items-center justify-center"

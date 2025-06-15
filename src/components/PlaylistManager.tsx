@@ -80,6 +80,7 @@ export function PlaylistManager() {
   const { playlists, isLoading, createPlaylist, deletePlaylist, removeVideo } = usePlaylists();
   const [playlistToDelete, setPlaylistToDelete] = useState<Playlist | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isCreatePlaylistDialogOpen, setIsCreatePlaylistDialogOpen] = useState(false);
 
   const handleDelete = async () => {
     if (playlistToDelete?.eventId) {
@@ -134,7 +135,10 @@ export function PlaylistManager() {
     return (
       <div className="space-y-4">
         <div className="flex justify-end">
-          <CreatePlaylistDialog onCreatePlaylist={createPlaylist} />
+          <CreatePlaylistDialog
+            onCreatePlaylist={createPlaylist}
+            onClose={() => setIsCreatePlaylistDialogOpen(false)}
+          />
         </div>
         <Card className="border-dashed">
           <CardContent className="py-12 px-8 text-center">
@@ -152,7 +156,10 @@ export function PlaylistManager() {
   return (
     <div className="space-y-4">
       <div className="flex justify-end">
-        <CreatePlaylistDialog onCreatePlaylist={createPlaylist} />
+        <CreatePlaylistDialog
+          onCreatePlaylist={createPlaylist}
+          onClose={() => setIsCreatePlaylistDialogOpen(false)}
+        />
       </div>
       
       <Accordion type="multiple" className="w-full">

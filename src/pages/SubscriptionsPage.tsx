@@ -14,13 +14,14 @@ export function SubscriptionsPage() {
     setFollowedPubkeys,
     loadMoreRef,
     initSearch,
-    setLikedVideoIds
+    setLikedVideoIds,
+    setVideoType
   } = useVideoCache();
-  const { config } = useAppContext();
   const { data: followedPubkeys = [] } = useFollowedAuthors();
 
   useEffect(() => {
     if (followedPubkeys.length > 0) {
+      setVideoType('all');
       setLikedVideoIds([]);
       setFollowedPubkeys(followedPubkeys);
       initSearch();
@@ -37,7 +38,7 @@ export function SubscriptionsPage() {
 
       <VideoGrid
         videos={videos}
-        videoType={config.videoType}
+        videoType={'all'}
         isLoading={isLoading}
         showSkeletons={true}
       />

@@ -21,7 +21,7 @@ export function Sidebar() {
 
   const navigationItems = [
     { name: "Home", icon: Home, href: "/" },
-    { name: "Shorts", icon: Play, href: "/?videoType=shorts" },
+    { name: "Shorts", icon: Play, href: "/shorts" },
     { name: "Subscriptions", icon: Users, href: "/subscriptions" },
   ];
 

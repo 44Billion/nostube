@@ -9,7 +9,7 @@ const pool = new SimplePool();
 const BATCH_SIZE = 50;
 let isLoading = false;
 let hasMoreVideos = true;
-let selectedVideoTypes: VideoType = 'all';
+let selectedVideoType: VideoType = 'all';
 let followedAuthorsPubkeys: string[] = [];
 let likedVideoEventIds: string[] = [];
 
@@ -26,13 +26,12 @@ let relayUrls = [
 
 async function loadVideoBatch(): Promise<boolean> {
   try {
-    console.log(selectedVideoTypes, getKindsForType(selectedVideoTypes));
     // Query each relay separately to handle pagination per relay
     const results = await Promise.all(
       relayUrls.map(async (relayUrl) => {
         const lastTimestamp = relayTimestamps.get(relayUrl);
         const filter: Filter = {
-          kinds: getKindsForType(selectedVideoTypes),
+          kinds: getKindsForType(selectedVideoType),
           limit: BATCH_SIZE,
           ...(lastTimestamp ? { until: lastTimestamp } : {}),
           ...(followedAuthorsPubkeys.length > 0 ? { authors: followedAuthorsPubkeys } : {}),
@@ -136,7 +135,7 @@ const updateQuery = () => {
 
 // Handle messages from main thread
 self.onmessage = async (e: MessageEvent) => {
-  const { type, data, videoType } = e.data;
+  const { type, data } = e.data;
 
   let allTags: Set<string>;
 
@@ -145,8 +144,6 @@ self.onmessage = async (e: MessageEvent) => {
       if (data.relayUrls) {
         relayUrls = data.relayUrls;
       }
-      selectedVideoTypes = videoType;
-
       await startLoading();
       updateQuery();
       break;
@@ -188,8 +185,8 @@ self.onmessage = async (e: MessageEvent) => {
       await startLoading();
       break;
 
-    case "SET_VIDEO_TYPES":
-      selectedVideoTypes = data;
+    case "SET_VIDEO_TYPE":
+      selectedVideoType = data || 'videos';
       videos = [];
       relayTimestamps.clear();
       hasMoreVideos = true;

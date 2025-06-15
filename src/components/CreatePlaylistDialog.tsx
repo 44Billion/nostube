@@ -19,9 +19,10 @@ import { Label } from '@/components/ui/label';
 
 interface CreatePlaylistDialogProps {
   onClose: () => void;
+  onCreatePlaylist: (name: string, description?: string) => Promise<void>;
 }
 
-export function CreatePlaylistDialog({ onClose }: CreatePlaylistDialogProps) {
+export function CreatePlaylistDialog({ onClose, onCreatePlaylist }: CreatePlaylistDialogProps) {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [isCreating, setIsCreating] = useState(false);
@@ -41,9 +42,7 @@ export function CreatePlaylistDialog({ onClose }: CreatePlaylistDialogProps) {
 
     setIsCreating(true);
     try {
-      // Here you would typically call your API or a Nostr publish hook
-      // For now, let's simulate a delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await onCreatePlaylist(name, description);
 
       toast({
         title: "Playlist created",
@@ -53,10 +52,10 @@ export function CreatePlaylistDialog({ onClose }: CreatePlaylistDialogProps) {
       setDescription('');
       queryClient.invalidateQueries({ queryKey: ['playlists'] });
       onClose();
-    } catch (e) {
+    } catch (error) {
       toast({
         title: "Error",
-        description: "Failed to create playlist.",
+        description: error instanceof Error ? error.message : "Failed to create playlist.",
         variant: "destructive",
       });
     } finally {

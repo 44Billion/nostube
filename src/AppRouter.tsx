@@ -9,6 +9,7 @@ import { VideoPage } from '@/pages/VideoPage';
 import { AuthorPage } from '@/pages/AuthorPage';
 import { UploadPage } from '@/pages/UploadPage';
 import PlaylistPage from '@/pages/Playlists';
+import { ShortsPage } from './pages/ShortsPage';
 
 export function AppRouter() {
   return (
@@ -17,6 +18,7 @@ export function AppRouter() {
       <Routes>
         <Route path="/" element={<MainLayout />}>
           <Route index element={<HomePage />} />
+          <Route path="/shorts" element={<ShortsPage />} />
           <Route path="/subscriptions" element={<SubscriptionsPage />} />
           <Route path="/liked-videos" element={<LikedVideosPage />} />
           <Route path="/video/:nevent" element={<VideoPage />} />
