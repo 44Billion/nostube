@@ -1,6 +1,5 @@
 import { VideoGrid } from "@/components/VideoGrid";
 import { useVideoCache } from "@/contexts/VideoCacheContext";
-import { useAppContext } from "@/hooks/useAppContext";
 import { useLikedEvents } from "@/hooks/useLikedEvents";
 import { useEffect } from "react";
 

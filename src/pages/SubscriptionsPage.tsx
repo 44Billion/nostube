@@ -1,6 +1,5 @@
 import { useEffect } from "react";
 import { useVideoCache } from "@/contexts/VideoCacheContext";
-import { useAppContext } from "@/hooks/useAppContext";
 import { VideoGrid } from "@/components/VideoGrid";
 import { Loader2 } from "lucide-react";
 import { useFollowedAuthors } from "@/hooks/useFollowedAuthors";

@@ -1,11 +1,9 @@
 import { useVideoCache } from '@/contexts/VideoCacheContext';
 import { Loader2 } from 'lucide-react';
-import { useAppContext } from '@/hooks/useAppContext';
 import { VideoGrid } from '@/components/VideoGrid';
 import { useEffect } from 'react';
 
 export function ShortsPage() {
-  const { config } = useAppContext();
   const { 
     videos,  
     isLoading, 
