@@ -5,9 +5,11 @@ import { nip19 } from "nostr-tools";
 export interface VideoEvent {
   id: string;
   kind: number;
+  identifier?: string;
   title: string;
   description: string;
   thumb: string;
+  video?: string;
   pubkey: string;
   created_at: number;
   duration: number;
@@ -40,6 +42,7 @@ export function processEvents(
         video !== undefined &&
         Boolean(video.id) &&
         Boolean(video.url) &&
+        Boolean(video.video) &&
         video?.url !== undefined &&
         video.url.indexOf("youtube.com") < 0
     );
@@ -66,6 +69,7 @@ export function processEvent(
     const mimeType = imetaValues.get("m");
     const image = imetaValues.get("image");
     const thumb = imetaValues.get("thumb");
+    const videoUrl = imetaValues.get("video") || url;
 
     const alt = imetaValues.get("alt") || event.content || "";
     const blurhash = imetaValues.get("blurhash");
@@ -77,7 +81,7 @@ export function processEvent(
     // Only process if it's a video
     //if (!url || !mimeType?.startsWith('video/')) return null;
 
-    const video = {
+    const videoEvent: VideoEvent = {
       id: event.id,
       kind: event.kind,
       identifier,
@@ -89,6 +93,7 @@ export function processEvent(
         `${videoThumbService}/${url}` ||
         blurHashToDataURL(blurhash) ||
         "",
+      video: videoUrl,
       pubkey: event.pubkey,
       created_at: event.created_at,
       duration,
@@ -104,9 +109,9 @@ export function processEvent(
     };
 
     // Create search index
-    video.searchText = createSearchIndex(video);
+    videoEvent.searchText = createSearchIndex(videoEvent);
 
-    return video;
+    return videoEvent;
   } else {
     // Fall back to old format
     const title = event.tags.find((t) => t[0] === "title")?.[1] || "";
@@ -123,13 +128,14 @@ export function processEvent(
     const url = event.tags.find((t) => t[0] === "url")?.[1] || "";
     const mimeType = event.tags.find((t) => t[0] === "m")?.[1] || "";
 
-    const video = {
+    const videoEvent: VideoEvent = {
       id: event.id,
       kind: event.kind,
       identifier,
       title,
       description,
       thumb: thumb || `${videoThumbService}/${url}`,
+      video: url,
       pubkey: event.pubkey,
       created_at: event.created_at,
       duration,
@@ -147,8 +153,8 @@ export function processEvent(
     };
 
     // Create search index
-    video.searchText = createSearchIndex(video);
+    videoEvent.searchText = createSearchIndex(videoEvent);
 
-    return video;
+    return videoEvent;
   }
 }

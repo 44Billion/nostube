@@ -8,6 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useState, useRef } from "react";
 
 interface VideoCardProps {
   video: VideoEvent;
@@ -32,9 +33,37 @@ export function VideoCard({
       ? "aspect-[1/1]"
       : "aspect-video";
   const maxWidth = format == "vertical" && "sm:max-w-[280px] mx-auto";
+
+  const [isHovered, setIsHovered] = useState(false);
+  const [videoLoaded, setVideoLoaded] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  const handleMouseEnter = () => {
+    if (video.video) {
+      setIsHovered(true);
+    }
+  };
+
+  const handleMouseLeave = () => {
+    setIsHovered(false);
+    setVideoLoaded(false);
+    if (videoRef.current) {
+      videoRef.current.pause();
+      videoRef.current.currentTime = 0;
+    }
+  };
+
+  const handleVideoLoadedData = () => {
+    setVideoLoaded(true);
+    videoRef.current?.play().catch(error => console.error("Video autoplay blocked:", error));
+  };
   
   return (
-    <div className={cn("transition-all duration-200", maxWidth)}>
+    <div
+      className={cn("transition-all duration-200", maxWidth)}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+    >
       <div className="p-0">
         <Link to={`/video/${video.link}`}>
           <div className="relative">
@@ -42,8 +71,29 @@ export function VideoCard({
               loading="lazy"
               src={video.thumb}
               alt={video.title}
-              className={cn("w-full object-cover rounded-lg", aspectRatio)}
+              className={cn(
+                "w-full object-cover rounded-lg transition-opacity duration-300",
+                aspectRatio,
+                isHovered && videoLoaded ? "opacity-0 absolute" : "opacity-100"
+              )}
             />
+            {isHovered && video.url && (
+              <video
+                ref={videoRef}
+                src={video.url}
+                muted
+                autoPlay={false}
+                loop
+                playsInline
+                preload="metadata"
+                onLoadedData={handleVideoLoadedData}
+                className={cn(
+                  "w-full object-cover rounded-lg transition-opacity duration-300",
+                  aspectRatio,
+                  videoLoaded ? "opacity-100" : "opacity-0 hidden"
+                )}
+              />
+            )}
             {video.duration > 0 && (
               <div className="absolute bottom-2 right-2 bg-black/80 text-white px-1 rounded text-sm">
                 {formatDuration(video.duration)}
