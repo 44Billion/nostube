@@ -25,9 +25,12 @@ export function RelaySelector(props: RelaySelectorProps) {
   const { className } = props;
   const { config, updateConfig, presetRelays = [] } = useAppContext();
   
-  const selectedRelay = config.relayUrl;
+  const selectedRelay = config.relays[0];
   const setSelectedRelay = (relay: string) => {
-    updateConfig((current) => ({ ...current, relayUrl: relay }));
+    updateConfig((current) => ({
+      ...current,
+      relays: [relay, ...current.relays.filter((r) => r !== relay)],
+    }));
   };
 
   const [open, setOpen] = useState(false);
@@ -51,7 +54,7 @@ export function RelaySelector(props: RelaySelectorProps) {
 
   // Handle adding a custom relay
   const handleAddCustomRelay = (url: string) => {
-    setSelectedRelay?.(normalizeRelayUrl(url));
+    setSelectedRelay(normalizeRelayUrl(url));
     setOpen(false);
     setInputValue("");
   };

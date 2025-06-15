@@ -9,7 +9,7 @@ const pool = new SimplePool();
 const BATCH_SIZE = 50;
 let isLoading = false;
 let hasMoreVideos = true;
-let selectedVideoType: VideoType = 'all';
+let selectedVideoType: VideoType = "all";
 let followedAuthorsPubkeys: string[] = [];
 let likedVideoEventIds: string[] = [];
 
@@ -33,19 +33,30 @@ async function loadVideoBatch(): Promise<boolean> {
           kinds: getKindsForType(selectedVideoType),
           limit: BATCH_SIZE,
           ...(lastTimestamp ? { until: lastTimestamp } : {}),
-          ...(followedAuthorsPubkeys.length > 0 ? { authors: followedAuthorsPubkeys } : {}),
+          ...(followedAuthorsPubkeys.length > 0
+            ? { authors: followedAuthorsPubkeys }
+            : {}),
           ...(likedVideoEventIds.length > 0 ? { ids: likedVideoEventIds } : {}),
         };
 
-        const events = await pool.querySync([relayUrl], filter);
+        try {
+          const events = await pool.querySync([relayUrl], filter, {
+            maxWait: 500,
+          });
+  
+          if (events.length > 0) {
+            // Update last timestamp for this relay
+            const minTimestamp = Math.min(...events.map((e) => e.created_at));
+            relayTimestamps.set(relayUrl, minTimestamp);
+          }
 
-        if (events.length > 0) {
-          // Update last timestamp for this relay
-          const minTimestamp = Math.min(...events.map((e) => e.created_at));
-          relayTimestamps.set(relayUrl, minTimestamp);
+          return events;
+
+  
+        } catch(err) {
+          console.error('Error fetching from '+relayUrl, err);
         }
-
-        return events;
+        return [];
       })
     );
 
@@ -143,6 +154,8 @@ self.onmessage = async (e: MessageEvent) => {
       if (data.relayUrls) {
         relayUrls = data.relayUrls;
       }
+      console.log('startLoading');
+
       await startLoading();
       updateQuery();
       break;
@@ -185,7 +198,7 @@ self.onmessage = async (e: MessageEvent) => {
       break;
 
     case "SET_VIDEO_TYPE":
-      selectedVideoType = data || 'videos';
+      selectedVideoType = data || "videos";
       videos = [];
       relayTimestamps.clear();
       hasMoreVideos = true;
@@ -206,3 +219,5 @@ self.onmessage = async (e: MessageEvent) => {
       break;
   }
 };
+
+self.postMessage({ type: "WORKER_READY" });

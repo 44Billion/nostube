@@ -1,7 +1,13 @@
-import { VideoEvent } from '@/utils/video-event';
-import { createContext, useContext, useEffect, useRef, useState, useCallback } from 'react';
-import { useInView } from 'react-intersection-observer';
-import { AppContext } from '@/contexts/AppContext';
+import { VideoEvent } from "@/utils/video-event";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+  useCallback,
+} from "react";
+import { useInView } from "react-intersection-observer";
 
 type VideoCache = VideoEvent;
 
@@ -14,7 +20,7 @@ interface VideoCacheContextType {
   searchVideos: (query: string) => void;
   filterByTags: (tags: string[]) => void;
   clearCache: () => void;
-  setVideoType: (type: 'all' | 'shorts' | 'videos') => void;
+  setVideoType: (type: "all" | "shorts" | "videos") => void;
   loadMoreRef: (node?: Element | null) => void;
   setLikedVideoIds: (ids: string[]) => void;
   initSearch: (relays: string[]) => void;
@@ -23,32 +29,39 @@ interface VideoCacheContextType {
   likedVideoIds: string[];
   /** Set the public keys of followed authors */
   setFollowedPubkeys: (pubkeys: string[]) => void;
+  isWorkerReady: boolean;
 }
 
-const VideoCacheContext = createContext<VideoCacheContextType | undefined>(undefined);
+const VideoCacheContext = createContext<VideoCacheContextType | undefined>(
+  undefined
+);
 
-export function VideoCacheProvider({ children }: { children: React.ReactNode }) {
+export function VideoCacheProvider({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const worker = useRef<Worker>();
   const [videos, setVideos] = useState<VideoCache[]>([]);
   const [allTags, setAllTags] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [hasMore, setHasMore] = useState(true);
   const [totalVideos, setTotalVideos] = useState(0);
-  const { config } = useContext(AppContext)!;
   const [followedPubkeys, setFollowedPubkeysState] = useState<string[]>([]);
   const [likedVideoIds, setLikedVideoIdsState] = useState<string[]>([]);
+  const [isWorkerReady, setIsWorkerReady] = useState(false);
 
   // Intersection observer for infinite loading
   const { ref: loadMoreRef, inView } = useInView({
     threshold: 0,
-    rootMargin: '200px',
+    rootMargin: "200px",
   });
 
   useEffect(() => {
     // Initialize worker
     worker.current = new Worker(
-      new URL('../workers/videoCacheWorker.ts', import.meta.url),
-      { type: 'module' }
+      new URL("../workers/videoCacheWorker.ts", import.meta.url),
+      { type: "module" }
     );
 
     // Set up message handler
@@ -56,67 +69,68 @@ export function VideoCacheProvider({ children }: { children: React.ReactNode }) 
       const { type, results, tags, count, hasMore } = e.data;
 
       switch (type) {
-        case 'SEARCH_RESULTS':
+        case "SEARCH_RESULTS":
           setVideos(results);
           break;
-        case 'ALL_TAGS':
+        case "ALL_TAGS":
           setAllTags(tags);
           break;
-        case 'LOAD_PROGRESS':
+        case "LOAD_PROGRESS":
           setTotalVideos(count);
           setHasMore(hasMore);
           setAllTags(tags);
           setIsLoading(false);
           break;
-        case 'LOAD_COMPLETE':
+        case "LOAD_COMPLETE":
           setTotalVideos(count);
           //setHasMore(false);
           setIsLoading(false);
           break;
+        case "WORKER_READY": 
+          setIsWorkerReady(true);
       }
     };
 
     return () => {
       worker.current?.terminate();
     };
-  }, [config.videoType]);
+  }, []);
 
   // Handle infinite loading
   useEffect(() => {
     if (inView && !isLoading && hasMore) {
-      worker.current?.postMessage({ type: 'LOAD_MORE' });
+      worker.current?.postMessage({ type: "LOAD_MORE" });
     }
   }, [inView, isLoading, hasMore]);
 
   const searchVideos = useCallback((query: string) => {
     worker.current?.postMessage({
-      type: 'SEARCH',
+      type: "SEARCH",
       data: query,
     });
   }, []);
 
   const filterByTags = useCallback((tags: string[]) => {
     worker.current?.postMessage({
-      type: 'FILTER_TAGS',
+      type: "FILTER_TAGS",
       data: tags,
     });
   }, []);
 
   const clearCache = useCallback(() => {
-    worker.current?.postMessage({ type: 'CLEAR_CACHE' });
+    worker.current?.postMessage({ type: "CLEAR_CACHE" });
   }, []);
 
-  const setVideoType = useCallback((type: 'all' | 'shorts' | 'videos') => {
+  const setVideoType = useCallback((type: "all" | "shorts" | "videos") => {
     worker.current?.postMessage({
-      type: 'SET_VIDEO_TYPE',
+      type: "SET_VIDEO_TYPE",
       data: type,
     });
   }, []);
 
-
   const setFollowedPubkeys = useCallback((pubkeys: string[]) => {
     worker.current?.postMessage({
-      type: 'SET_FOLLOWED_PUBKEYS',
+      type: "SET_FOLLOWED_PUBKEYS",
       data: pubkeys,
     });
     setFollowedPubkeysState(pubkeys);
@@ -124,21 +138,22 @@ export function VideoCacheProvider({ children }: { children: React.ReactNode }) 
 
   const setLikedVideoIds = useCallback((ids: string[]) => {
     worker.current?.postMessage({
-      type: 'SET_LIKED_VIDEO_IDS',
+      type: "SET_LIKED_VIDEO_IDS",
       data: ids,
     });
     setLikedVideoIdsState(ids);
   }, []);
 
   const initSearch = useCallback((relays: string[]) => {
+    console.log(" initSearch ", relays);
+
     worker.current?.postMessage({
-      type: 'INIT',
+      type: "INIT",
       data: {
         relayUrls: relays,
-        videoType: config.videoType,
       },
     });
-  }, [config.videoType]);
+  }, []);
 
   const value = {
     videos,
@@ -156,6 +171,7 @@ export function VideoCacheProvider({ children }: { children: React.ReactNode }) 
     followedPubkeys,
     likedVideoIds,
     setFollowedPubkeys,
+    isWorkerReady,
   };
 
   return (
@@ -168,7 +184,7 @@ export function VideoCacheProvider({ children }: { children: React.ReactNode }) 
 export function useVideoCache() {
   const context = useContext(VideoCacheContext);
   if (context === undefined) {
-    throw new Error('useVideoCache must be used within a VideoCacheProvider');
+    throw new Error("useVideoCache must be used within a VideoCacheProvider");
   }
   return context;
-} 
+}

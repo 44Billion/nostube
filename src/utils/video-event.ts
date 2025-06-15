@@ -105,7 +105,6 @@ export function processEvent(
 
     // Create search index
     video.searchText = createSearchIndex(video);
-    console.log("event", event, video);
 
     return video;
   } else {
@@ -149,8 +148,6 @@ export function processEvent(
 
     // Create search index
     video.searchText = createSearchIndex(video);
-
-    console.log("event", event, video);
 
     return video;
   }

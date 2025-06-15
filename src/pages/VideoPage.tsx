@@ -20,6 +20,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { CollapsibleText } from "@/components/ui/collapsible-text";
 import { AddToPlaylistButton } from "@/components/AddToPlaylistButton";
 import { useAppContext } from "@/hooks/useAppContext";
+import { mergeRelays } from "@/lib/utils";
 
 function formatFileSize(bytes: number): string {
   const units = ["B", "KB", "MB", "GB"];
@@ -35,21 +36,25 @@ function formatFileSize(bytes: number): string {
 }
 
 export function VideoPage() {
-  const { presetRelays = [] } = useAppContext();
+  const { config  } = useAppContext();
   const { nevent } = useParams<{ nevent: string }>();
   const { nostr } = useNostr();
   const { id, relays, author, kind } = nip19.decode(nevent ?? "")
     .data as EventPointer;
 
-  const fullRelays = [
-    ...new Set([...(relays || []), ...presetRelays.map((r) => r.url)].map(r => r.replace(/\/$/,''))),
-  ];
+  const fullRelays =  mergeRelays([(relays || []), config.relays] ) ;
 
   const { data: video, isLoading } = useQuery<VideoEvent | null>({
     queryKey: ["video", nevent],
     queryFn: async ({ signal }) => {
       if (!nevent) return null;
-
+console.log([
+  {
+    authors: author ? [author] : undefined,
+    kinds: kind ? [kind] : undefined,
+    ids: [id],
+  },
+], fullRelays);
       const events = await nostr.query(
         [
           {
@@ -58,7 +63,7 @@ export function VideoPage() {
             ids: [id],
           },
         ],
-        { signal, relays: fullRelays }
+        { signal: AbortSignal.any([signal, AbortSignal.timeout(1000)]), relays: fullRelays }
       );
 
       if (!events.length) return null;

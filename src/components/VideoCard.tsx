@@ -51,7 +51,7 @@ export function VideoCard({
             )}
           </div>
         </Link>
-        <div className="py-3">
+        <div className="pt-3">
           <div className="flex gap-3">
             {!hideAuthor && (
               <Link

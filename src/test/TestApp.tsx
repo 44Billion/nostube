@@ -19,7 +19,7 @@ export function TestApp({ children }: TestAppProps) {
 
   const defaultConfig: AppConfig = {
     theme: 'light',
-    relayUrl: 'wss://relay.nostr.band',
+    relays: ['wss://relay.nostr.band'],
     videoType: "videos",
   };
 
@@ -28,7 +28,7 @@ export function TestApp({ children }: TestAppProps) {
       <AppProvider storageKey='test-app-config' defaultConfig={defaultConfig}>
         <QueryClientProvider client={queryClient}>
           <NostrLoginProvider storageKey='test-login'>
-            <NostrProvider relayUrl={defaultConfig.relayUrl}>
+            <NostrProvider relayUrl={defaultConfig.relays[0]}>
               {children}
             </NostrProvider>
           </NostrLoginProvider>

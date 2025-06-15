@@ -90,11 +90,10 @@ function AuthorProfile({ pubkey }: { pubkey: string }) {
 export function AuthorPage() {
   const { npub } = useParams<{ npub: string }>();
   const { nostr } = useNostr();
-  const { presetRelays } = useAppContext();
+  const { config } = useAppContext();
 
   const pubkey = nip19.decode(npub ?? "").data as string;
 
-  const relays = presetRelays?.map((relay) => relay.url) || [];
   // Query for author's videos
   const { data: videos = [], isLoading: isLoadingVideos } = useQuery({
     queryKey: ["author-videos", pubkey],
@@ -109,7 +108,7 @@ export function AuthorPage() {
             limit: 500,
           },
         ],
-        { signal, relays }
+        { signal: AbortSignal.any([signal, AbortSignal.timeout(1000)]), relays: config.relays }
       );
 
       const allEvents = events.flat();
@@ -117,7 +116,7 @@ export function AuthorPage() {
         new Map(allEvents.map((event) => [event.id, event])).values()
       );
 
-      return processEvents(Array.from(uniqueEvents.values()), relays);
+      return processEvents(Array.from(uniqueEvents.values()), config.relays);
     },
     enabled: !!pubkey,
   });

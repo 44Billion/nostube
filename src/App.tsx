@@ -20,7 +20,7 @@ const queryClient = new QueryClient({
   },
 });
 
-const presetRelays = [
+export const presetRelays = [
   { url: "wss://ditto.pub/relay", name: "Ditto" },
   { url: "wss://relay.nostr.band", name: "Nostr.Band" },
   { url: "wss://relay.damus.io", name: "Damus" },
@@ -35,6 +35,7 @@ const defaultConfig: AppConfig = {
 };
 
 export function App() {
+ 
   return (
     <ThemeProvider defaultTheme="system" storageKey="nostr-tube-theme">
       <QueryClientProvider client={queryClient}>

@@ -1,6 +1,13 @@
-import { ReactNode, useState, useCallback } from 'react';
-import { useLocalStorage } from '@/hooks/useLocalStorage';
-import { AppContext, type AppConfig, type AppContextType } from '@/contexts/AppContext';
+import { ReactNode, useState, useCallback, useEffect } from "react";
+import { useLocalStorage } from "@/hooks/useLocalStorage";
+import {
+  AppContext,
+  type AppConfig,
+  type AppContextType,
+} from "@/contexts/AppContext";
+import { useUserRelays } from "@/hooks/useUserRelays";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
+import { mergeRelays } from "@/lib/utils";
 
 interface AppProviderProps {
   children: ReactNode;
@@ -13,16 +20,17 @@ interface AppProviderProps {
 }
 
 export function AppProvider(props: AppProviderProps) {
-  const {
-    children,
-    storageKey,
-    defaultConfig,
-    presetRelays,
-  } = props;
+  const { children, storageKey, defaultConfig, presetRelays } = props;
 
   // App configuration state with localStorage persistence
-  const [config, setConfig] = useLocalStorage<AppConfig>(storageKey, defaultConfig);
+  const [config, setConfig] = useLocalStorage<AppConfig>(
+    storageKey,
+    defaultConfig
+  );
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
+  const { user } = useCurrentUser();
+  const userRelays = useUserRelays(user?.pubkey);
 
   // Generic config updater with callback pattern
   const updateConfig = (updater: (currentConfig: AppConfig) => AppConfig) => {
@@ -30,8 +38,28 @@ export function AppProvider(props: AppProviderProps) {
   };
 
   const toggleSidebar = useCallback(() => {
-    setIsSidebarOpen(prev => !prev);
+    setIsSidebarOpen((prev) => {
+      const newState = !prev;
+      if (newState) {
+        window.scrollTo(0, 0);
+      }
+      return newState;
+    });
   }, []);
+
+  useEffect(() => {
+    if (
+      !userRelays.isLoading &&
+      userRelays.data &&
+      userRelays.data.length > 0
+    ) {
+      console.log([(config.relays || []), userRelays.data.map((r) => r.url)]);
+      setConfig({
+        ...config,
+        relays: mergeRelays([(config.relays || []), userRelays.data.map((r) => r.url)]),
+      });
+    }
+  }, [userRelays.data]);
 
   const appContextValue: AppContextType = {
     config,
