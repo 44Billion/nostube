@@ -2,14 +2,17 @@
 declare global {
   namespace JSX {
     interface IntrinsicElements {
-      "media-controller": React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement>, HTMLElement>;
+      "media-controller": React.DetailedHTMLProps<
+        React.HTMLAttributes<HTMLElement>,
+        HTMLElement
+      >;
     }
   }
 }
 import * as React from "react";
-import { useEffect, useRef } from 'react';
-import Hls from 'hls.js';
-import 'media-chrome';
+import { useEffect, useRef } from "react";
+import Hls from "hls.js";
+import "media-chrome";
 
 interface VideoPlayerProps {
   url: string;
@@ -20,7 +23,13 @@ interface VideoPlayerProps {
   className?: string;
 }
 
-export function VideoPlayer({ url, mime, poster, loop = false, onTimeUpdate }: VideoPlayerProps) {
+export function VideoPlayer({
+  url,
+  mime,
+  poster,
+  loop = false,
+  onTimeUpdate,
+}: VideoPlayerProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
@@ -29,7 +38,7 @@ export function VideoPlayer({ url, mime, poster, loop = false, onTimeUpdate }: V
 
     let hls: Hls | null = null;
 
-    if (mime === 'application/vnd.apple.mpegurl' && Hls.isSupported()) {
+    if (mime === "application/vnd.apple.mpegurl" && Hls.isSupported()) {
       hls = new Hls();
       hls.loadSource(url);
       hls.attachMedia(video);
@@ -45,29 +54,31 @@ export function VideoPlayer({ url, mime, poster, loop = false, onTimeUpdate }: V
   }, [url, mime]);
 
   return (
-    <media-controller >
-        <video
-        className='self-center'
-          ref={videoRef}
-          slot="media"
-          autoPlay
-          loop={loop}
-          poster={poster}
-          onTimeUpdate={() => {
-            if (onTimeUpdate && videoRef.current) {
-              onTimeUpdate(videoRef.current.currentTime);
-            }
-          }}
-        />
-        <media-control-bar>
-          <media-play-button />
-          <media-time-display />
-          <media-time-range />
-          <media-mute-button />
-          <media-volume-range />
-          <media-pip-button />
-          <media-fullscreen-button />
-        </media-control-bar>
-      </media-controller>
+    <media-controller>
+      <video
+        className="self-center"
+        ref={videoRef}
+        slot="media"
+        autoPlay
+        loop={loop}
+        poster={poster}
+        onTimeUpdate={() => {
+          if (onTimeUpdate && videoRef.current) {
+            onTimeUpdate(videoRef.current.currentTime);
+          }
+        }}
+      />
+
+      <media-control-bar>
+        <media-play-button />
+        <media-mute-button />
+        <media-volume-range />
+        <media-time-display />
+        <media-time-range />
+        <media-playback-rate-button></media-playback-rate-button>
+        <media-pip-button />
+        <media-fullscreen-button />
+      </media-control-bar>
+    </media-controller>
   );
 }

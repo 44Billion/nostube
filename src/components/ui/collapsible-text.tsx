@@ -9,6 +9,38 @@ interface CollapsibleTextProps {
   className?: string;
 }
 
+// Helper function to render text with clickable links
+const renderTextWithLinks = (text: string) => {
+  const parts: React.ReactNode[] = [];
+  const urlRegex = /(https?:\/\/[^\s]+)/g;
+  let lastIndex = 0;
+
+  text.replace(urlRegex, (match, url, offset) => {
+    if (offset > lastIndex) {
+      parts.push(text.substring(lastIndex, offset));
+    }
+    parts.push(
+      <a
+        key={url + offset}
+        href={url}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="text-accent-foreground hover:underline"
+      >
+        {url}
+      </a>
+    );
+    lastIndex = offset + match.length;
+    return match; // Return match to `replace` for correct iteration
+  });
+
+  if (lastIndex < text.length) {
+    parts.push(text.substring(lastIndex));
+  }
+
+  return parts;
+};
+
 export function CollapsibleText({ text, maxLines = 5, className }: CollapsibleTextProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [showButton, setShowButton] = useState(false);
@@ -32,7 +64,7 @@ export function CollapsibleText({ text, maxLines = 5, className }: CollapsibleTe
           !isExpanded && "line-clamp-5"
         )}
       >
-        {text}
+        {renderTextWithLinks(text)}
       </p>
       {showButton && (
         <Button

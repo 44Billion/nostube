@@ -42,7 +42,7 @@ export function Sidebar() {
 
   const configItems = [
     { name: "Settings", icon: Cog, href: "/settings", disabled: true },
-    { name: "Relays", icon: Server, href: "/relays", disabled: true },
+    { name: "Relays", icon: Server, href: "/settings/relays" },
 
   ]
 

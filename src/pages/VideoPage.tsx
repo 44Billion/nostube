@@ -99,8 +99,8 @@ console.log([
   }
 
   return (
-    <div className="sm:py-6">
-      <div className="flex gap-6 flex-col lg:flex-row">
+    <div className="max-w-[140rem] mx-auto sm:py-6">
+      <div className="flex gap-6 md:px-6 flex-col lg:flex-row">
         <div className="flex-1">
           {isLoading ? (
             <Card>
@@ -137,18 +137,15 @@ console.log([
               </CardHeader>
             </Card>
           ) : (
-            <Card>
-              <CardContent className="p-0">
+            <div>
                 <VideoPlayer
                   url={video?.url || ""}
                   mime={video?.mimeType || ""}
                   poster={video?.thumb || ""}
                   loop={[34236, 22].includes(video?.kind || 0)}
-                  className="w-full aspect-video"
+                  className="w-full aspect-video rounded-lg"
                 />
-              </CardContent>
-              <CardHeader>
-                <div className="flex flex-col gap-4">
+                <div className="flex flex-col gap-4 p-4">
                   <h1 className="text-2xl font-bold">{video?.title}</h1>
 
                   <div className="flex items-start justify-between">
@@ -190,7 +187,8 @@ console.log([
 
                   <Separator />
 
-                  {video &&
+ 
+                  {/*video &&
                     (video.dimensions || (video.size && video.size > 0)) && (
                       <div className="text-sm text-muted-foreground space-x-4">
                         {video.dimensions && <span>{video.dimensions}</span>}
@@ -198,11 +196,11 @@ console.log([
                           <span>{formatFileSize(video.size)}</span>
                         )}
                       </div>
-                    )}
-
+                    )*/}
+ 
                   {video && video.tags.length > 0 && (
                     <div className="flex flex-wrap gap-2">
-                      {video.tags.map((tag) => (
+                      {video.tags.slice(20).map((tag) => (
                         <Badge key={tag} variant="secondary">
                           {tag}
                         </Badge>
@@ -217,18 +215,17 @@ console.log([
                     />
                   )}
                 </div>
-              </CardHeader>
-            </Card>
+              </div>
           )}
 
           {video && (
-            <div className="mt-6">
+            <div className="p-4">
               <VideoComments videoId={video.id} authorPubkey={video.pubkey} />
             </div>
           )}
         </div>
 
-        <div className="w-full lg:w-80">
+        <div className="w-full lg:w-96">
           {video && (
             <VideoSuggestions
               currentVideoId={video.id}

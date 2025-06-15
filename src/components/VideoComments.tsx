@@ -1,14 +1,13 @@
-import { useNostr } from '@nostrify/react';
-import { useQuery } from '@tanstack/react-query';
-import { useCurrentUser } from '@/hooks/useCurrentUser';
-import { useNostrPublish } from '@/hooks/useNostrPublish';
-import { useAuthor } from '@/hooks/useAuthor';
-import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
-import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { useState } from 'react';
-import { formatDistance } from 'date-fns';
+import { useNostr } from "@nostrify/react";
+import { useQuery } from "@tanstack/react-query";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
+import { useNostrPublish } from "@/hooks/useNostrPublish";
+import { useAuthor } from "@/hooks/useAuthor";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { useState } from "react";
+import { formatDistance } from "date-fns";
 
 interface Comment {
   id: string;
@@ -37,7 +36,9 @@ function CommentItem({ comment }: { comment: Comment }) {
         <div className="flex items-center gap-2">
           <div className="font-semibold">{name}</div>
           <div className="text-sm text-muted-foreground">
-            {formatDistance(new Date(comment.created_at * 1000), new Date(), { addSuffix: true })}
+            {formatDistance(new Date(comment.created_at * 1000), new Date(), {
+              addSuffix: true,
+            })}
           </div>
         </div>
         <div className="mt-1">{comment.content}</div>
@@ -47,25 +48,27 @@ function CommentItem({ comment }: { comment: Comment }) {
 }
 
 export function VideoComments({ videoId, authorPubkey }: VideoCommentsProps) {
-  const [newComment, setNewComment] = useState('');
+  const [newComment, setNewComment] = useState("");
   const { nostr } = useNostr();
   const { user } = useCurrentUser();
   const { mutate: publish } = useNostrPublish();
 
   const { data: comments = [] } = useQuery<Comment[]>({
-    queryKey: ['video-comments', videoId],
+    queryKey: ["video-comments", videoId],
     queryFn: async ({ signal }) => {
       const events = await nostr.query(
-        [{
-          kinds: [1],
-          '#e': [videoId],
-          limit: 100,
-        }],
+        [
+          {
+            kinds: [1],
+            "#e": [videoId],
+            limit: 100,
+          },
+        ],
         { signal }
       );
       return events
         .sort((a, b) => b.created_at - a.created_at)
-        .map(event => ({
+        .map((event) => ({
           id: event.id,
           content: event.content,
           pubkey: event.pubkey,
@@ -82,41 +85,37 @@ export function VideoComments({ videoId, authorPubkey }: VideoCommentsProps) {
       kind: 1,
       content: newComment,
       tags: [
-        ['e', videoId],
-        ['p', authorPubkey],
-        ['client', 'nostr-tube']
+        ["e", videoId],
+        ["p", authorPubkey],
+        ["client", "nostr-tube"],
       ],
     });
 
-    setNewComment('');
+    setNewComment("");
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Comments</CardTitle>
-      </CardHeader>
-      <CardContent>
-        {user && (
-          <form onSubmit={handleSubmit} className="mb-8">
-            <Textarea
-              value={newComment}
-              onChange={(e) => setNewComment(e.target.value)}
-              placeholder="Add a comment..."
-              className="mb-2"
-            />
-            <Button type="submit" disabled={!newComment.trim()}>
-              Comment
-            </Button>
-          </form>
-        )}
+    <>
+      <h2 className="mb-4">Comments</h2>
+      {user && (
+        <form onSubmit={handleSubmit} className="mb-8">
+          <Textarea
+            value={newComment}
+            onChange={(e) => setNewComment(e.target.value)}
+            placeholder="Add a comment..."
+            className="mb-2"
+          />
+          <Button type="submit" disabled={!newComment.trim()}>
+            Comment
+          </Button>
+        </form>
+      )}
 
-        <div>
-          {comments.map((comment) => (
-            <CommentItem key={comment.id} comment={comment} />
-          ))}
-        </div>
-      </CardContent>
-    </Card>
+      <div>
+        {comments.map((comment) => (
+          <CommentItem key={comment.id} comment={comment} />
+        ))}
+      </div>
+    </>
   );
 }
