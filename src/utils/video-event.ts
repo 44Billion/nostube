@@ -1,3 +1,4 @@
+import { getTypeForKind, VideoType } from "@/lib/video-types";
 import { blurHashToDataURL } from "@/workers/blurhashDataURL";
 import type { NostrEvent } from "@nostrify/nostrify";
 import { nip19 } from "nostr-tools";
@@ -20,6 +21,7 @@ export interface VideoEvent {
   dimensions?: string;
   size?: number;
   link: string;
+  type: VideoType;
 }
 
 const videoThumbService = "https://video-thumb.apps2.slidestr.net";
@@ -106,6 +108,7 @@ export function processEvent(
         id: event.id,
         relays,
       }),
+      type: getTypeForKind(event.kind),
     };
 
     // Create search index
@@ -150,6 +153,7 @@ export function processEvent(
         id: event.id,
         relays,
       }),
+      type: getTypeForKind(event.kind),
     };
 
     // Create search index

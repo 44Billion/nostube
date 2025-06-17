@@ -49,6 +49,7 @@ export function AppProvider(props: AppProviderProps) {
 
   useEffect(() => {
     if (
+      (config.relays || []).length == 0 &&
       !userRelays.isLoading &&
       userRelays.data &&
       userRelays.data.length > 0

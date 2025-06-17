@@ -27,7 +27,6 @@ export function ShortsPage() {
 
   return (
     <div className=" sm:px-4 sm:py-6">
-
       <VideoGrid
         videos={videos}
         videoType={"shorts"}

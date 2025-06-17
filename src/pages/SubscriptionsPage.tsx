@@ -7,7 +7,6 @@ import { useAppContext } from "@/hooks/useAppContext";
 
 export function SubscriptionsPage() {
   const {
-    totalVideos,
     videos,
     isLoading,
     hasMore,

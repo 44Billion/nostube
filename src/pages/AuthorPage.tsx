@@ -16,12 +16,15 @@ import { useAppContext } from "@/hooks/useAppContext";
 import { processEvents } from "@/utils/video-event";
 import { nip19 } from "nostr-tools";
 import { CollapsibleText } from "@/components/ui/collapsible-text";
+import { useEffect, useMemo, useState } from "react";
 
 interface AuthorStats {
   videoCount: number;
   totalViews: number;
   joinedDate: Date;
 }
+
+type Tabs = "videos" | "shorts" | "tags";
 
 function AuthorProfile({ pubkey }: { pubkey: string }) {
   const { data: metadata, isLoading } = useAuthor(pubkey);
@@ -63,8 +66,8 @@ function AuthorProfile({ pubkey }: { pubkey: string }) {
         </div>
 
         {author?.about && (
-          <CollapsibleText 
-            text={author.about} 
+          <CollapsibleText
+            text={author.about}
             className="text-muted-foreground"
           />
         )}
@@ -91,11 +94,12 @@ export function AuthorPage() {
   const { npub } = useParams<{ npub: string }>();
   const { nostr } = useNostr();
   const { config } = useAppContext();
+  const [activeTab, setActiveTab] = useState<Tabs>("videos");
 
   const pubkey = nip19.decode(npub ?? "").data as string;
 
   // Query for author's videos
-  const { data: videos = [], isLoading: isLoadingVideos } = useQuery({
+  const { data: allVideos = [], isLoading: isLoadingVideos } = useQuery({
     queryKey: ["author-videos", pubkey],
     queryFn: async ({ signal }) => {
       if (!pubkey) return [];
@@ -108,7 +112,10 @@ export function AuthorPage() {
             limit: 500,
           },
         ],
-        { signal: AbortSignal.any([signal, AbortSignal.timeout(1000)]), relays: config.relays }
+        {
+          signal: AbortSignal.any([signal, AbortSignal.timeout(1000)]),
+          relays: config.relays,
+        }
       );
 
       const allEvents = events.flat();
@@ -121,22 +128,44 @@ export function AuthorPage() {
     enabled: !!pubkey,
   });
 
-  if (!pubkey) return null;
-
   // Get author stats
   const stats: AuthorStats = {
-    videoCount: videos.length,
+    videoCount: allVideos.length,
     totalViews: 0, // Could be implemented with NIP-78 view counts
     joinedDate:
-      videos.length > 0
-        ? new Date(Math.min(...videos.map((v) => v.created_at * 1000)))
+      allVideos.length > 0
+        ? new Date(Math.min(...allVideos.map((v) => v.created_at * 1000)))
         : new Date(),
   };
 
   // Get unique tags from all videos
-  const uniqueTags = Array.from(new Set(videos.flatMap((video) => video.tags)))
-    .filter(Boolean)
-    .sort();
+  const uniqueTags = useMemo(
+    () =>
+      Array.from(new Set(allVideos.flatMap((video) => video.tags)))
+        .filter(Boolean)
+        .sort(),
+    [allVideos]
+  );
+
+  const shorts = useMemo(
+    () => allVideos.filter((v) => v.type == "shorts"),
+    [allVideos]
+  );
+
+  const videos = useMemo(
+    () => allVideos.filter((v) => v.type == "videos"),
+    [allVideos]
+  );
+
+  useEffect(() => {
+    if (videos.length > shorts.length) {
+      setActiveTab("videos");
+    } else {
+      setActiveTab("shorts");
+    }
+  }, [shorts, videos]);
+
+  if (!pubkey) return null;
 
   return (
     <div className="sm:p-4">
@@ -158,10 +187,24 @@ export function AuthorPage() {
             </div>
           </div>
 
-          <Tabs defaultValue="videos">
+          <Tabs
+            value={activeTab}
+            onValueChange={(v) => setActiveTab(v as Tabs)}
+          >
             <TabsList>
-              <TabsTrigger value="videos">Videos</TabsTrigger>
-              <TabsTrigger value="tags">Tags</TabsTrigger>
+              {videos.length > 0 && (
+                <TabsTrigger value="videos" className="cursor-pointer">
+                  Videos ({videos.length})
+                </TabsTrigger>
+              )}
+              {shorts.length > 0 && (
+                <TabsTrigger value="shorts" className="cursor-pointer">
+                  Shorts ({shorts.length})
+                </TabsTrigger>
+              )}
+              <TabsTrigger value="tags" className="cursor-pointer">
+                Tags
+              </TabsTrigger>
             </TabsList>
 
             <TabsContent value="videos" className="mt-6">
@@ -176,10 +219,46 @@ export function AuthorPage() {
                   ))}
                 </div>
               ) : videos.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                   {videos.map((video) => (
-                    <VideoCard key={video.id} video={video} hideAuthor format="square" />
+                    <VideoCard
+                      key={video.id}
+                      video={video}
+                      hideAuthor
+                      format="horizontal"
+                    />
                   ))}
+                </div>
+              ) : (
+                <div className="text-center py-12 text-muted-foreground">
+                  No videos uploaded yet
+                </div>
+              )}
+            </TabsContent>
+
+            <TabsContent value="shorts" className="mt-6">
+              {isLoadingVideos ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6">
+                  {Array.from({ length: 8 }).map((_, i) => (
+                    <div key={i} className="space-y-2">
+                      <Skeleton className="w-full aspect-video" />
+                      <Skeleton className="h-4 w-3/4" />
+                      <Skeleton className="h-4 w-1/2" />
+                    </div>
+                  ))}
+                </div>
+              ) : shorts.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6">
+                  {shorts
+                    .filter((v) => v.type)
+                    .map((video) => (
+                      <VideoCard
+                        key={video.id}
+                        video={video}
+                        hideAuthor
+                        format="vertical"
+                      />
+                    ))}
                 </div>
               ) : (
                 <div className="text-center py-12 text-muted-foreground">

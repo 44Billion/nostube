@@ -157,6 +157,7 @@ export function VideoCacheProvider({
 
   const value = {
     videos,
+    setVideos,
     allTags,
     isLoading,
     hasMore,
