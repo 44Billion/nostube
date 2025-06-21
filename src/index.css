@@ -123,12 +123,18 @@
     align-content: center;
   }
 
-  media-controller video,
+  media-controller video {
+    max-height: 80dvh;
+  }
+
+  media-controller:fullscreen video {
+    max-height: 100dvh;
+  }
+
   media-controller hls-video {
     height: 80dvh;
   }
 
-  media-controller:fullscreen video,
   media-controller:fullscreen hls-video {
     height: 100dvh;
   }

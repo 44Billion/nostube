@@ -220,6 +220,7 @@ export function VideoPage() {
             currentVideoId={video?.id}
             relays={fullRelays || []}
             authorPubkey={video?.pubkey}
+            currentVideoType={video?.type}
           />
         </div>
       </div>

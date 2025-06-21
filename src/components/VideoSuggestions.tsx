@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { useAuthor } from "@/hooks/useAuthor";
 import { processEvent, VideoEvent } from "@/utils/video-event";
-import { getKindsForType } from "@/lib/video-types";
+import { getKindsForType, VideoType } from "@/lib/video-types";
 import { NostrEvent } from "@nostrify/nostrify";
 import { formatDistance } from "date-fns";
 import { Skeleton } from '@/components/ui/skeleton';
@@ -74,10 +74,12 @@ interface VideoSuggestionsProps {
   currentVideoId?: string;
   relays: string[];
   authorPubkey?: string;
+  currentVideoType?: VideoType;
 }
 
 export function VideoSuggestions({
   currentVideoId,
+  currentVideoType,
   relays,
   authorPubkey,
 }: VideoSuggestionsProps) {
@@ -111,7 +113,7 @@ export function VideoSuggestions({
       const generalEvents = await nostr.query(
         [
           {
-            kinds: getKindsForType("all"),
+            kinds: currentVideoType ? getKindsForType(currentVideoType) : getKindsForType("all"),
             limit: 30, // Fetch more to allow for filtering
           },
         ],
