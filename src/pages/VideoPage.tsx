@@ -11,7 +11,7 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { formatDistance } from "date-fns";
 import { Separator } from "@/components/ui/separator";
-import { useEffect } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
 import { processEvent, VideoEvent } from "@/utils/video-event";
 import { nip19 } from "nostr-tools";
 import { EventPointer } from "nostr-tools/nip19";
@@ -20,6 +20,49 @@ import { CollapsibleText } from "@/components/ui/collapsible-text";
 import { AddToPlaylistButton } from "@/components/AddToPlaylistButton";
 import { useAppContext } from "@/hooks/useAppContext";
 import { mergeRelays } from "@/lib/utils";
+import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Facebook, Mail, Twitter, Link as LinkIcon, Clock, Globe, Send, Share2 } from "lucide-react";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import type { NUser } from "@nostrify/react/login";
+
+// Custom hook for debounced play position storage
+function useDebouncedPlayPositionStorage(playPos: number, user: NUser | undefined, videoId: string | undefined) {
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastWriteRef = useRef<number>(0);
+  useEffect(() => {
+    if (!user || !videoId) return;
+    if (playPos < 5) return;
+    const key = `playpos:${user.pubkey}:${videoId}`;
+    const now = Date.now();
+    // If last write was more than 3s ago, write immediately
+    if (now - lastWriteRef.current > 3000) {
+      localStorage.setItem(key, String(playPos));
+      lastWriteRef.current = now;
+      if (debounceRef.current) {
+        clearTimeout(debounceRef.current);
+        debounceRef.current = null;
+      }
+    } else {
+      if (debounceRef.current) {
+        clearTimeout(debounceRef.current);
+      }
+      debounceRef.current = setTimeout(() => {
+        localStorage.setItem(key, String(playPos));
+        lastWriteRef.current = Date.now();
+        debounceRef.current = null;
+      }, 2000);
+    }
+    return () => {
+      if (debounceRef.current) {
+        clearTimeout(debounceRef.current);
+        debounceRef.current = null;
+      }
+    };
+  }, [playPos, user, videoId]);
+}
 
 export function VideoPage() {
   const { config } = useAppContext();
@@ -86,6 +129,64 @@ export function VideoPage() {
     }
   }, [video]);
 
+  const [shareOpen, setShareOpen] = useState(false);
+  const [includeTimestamp, setIncludeTimestamp] = useState(false);
+  const [currentPlayPos, setCurrentPlayPos] = useState(0);
+
+  // Compute initial play position from ?t=... param or localStorage
+  let initialPlayPos = 0;
+  const { user } = useCurrentUser();
+  if (typeof window !== "undefined" && user && video) {
+    const params = new URLSearchParams(window.location.search);
+    const t = parseInt(params.get("t") || "", 10);
+    if (!isNaN(t)) initialPlayPos = t;
+    if (initialPlayPos === 0) {
+      const key = `playpos:${user.pubkey}:${video.id}`;
+      const saved = localStorage.getItem(key);
+      if (saved) {
+        const time = parseFloat(saved);
+        if (!isNaN(time)) initialPlayPos = time;
+      }
+    }
+  }
+
+  // Use the custom hook for debounced play position storage
+  useDebouncedPlayPositionStorage(currentPlayPos, user, video?.id);
+
+  // Helper to encode URI components
+  function encode(val: string): string {
+    return encodeURIComponent(val);
+  }
+
+  // Get current video time in seconds
+  function getCurrentTime() {
+    return Math.floor(currentPlayPos);
+  }
+
+  // Build share URL
+  const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
+  const videoUrl = `${baseUrl}/video/${nevent || ""}`;
+  const timestamp = includeTimestamp ? getCurrentTime() : 0;
+  const shareUrl = timestamp > 0 ? `${videoUrl}?t=${timestamp}` : videoUrl;
+  const fullUrl = shareUrl;
+  const title = video?.title || "Watch this video";
+  const thumbnailUrl = video?.thumb || "";
+
+  const shareLinks = useMemo(() => {
+    const eUrl = encode(shareUrl);
+    const eFull = encode(fullUrl);
+    const eTitle = encode(title);
+    const eThumb = encode(thumbnailUrl);
+    return {
+      mailto: `mailto:?body=${eUrl}`,
+      whatsapp: `https://api.whatsapp.com/send/?text=${eTitle}%20${eUrl}`,
+      x: `https://x.com/intent/tweet?url=${eUrl}&text=${eTitle}`,
+      reddit: `https://www.reddit.com/submit?url=${eFull}&title=${eTitle}`,
+      facebook: `https://www.facebook.com/share_channel/?type=reshare&link=${eFull}&display=popup`,
+      pinterest: `https://www.pinterest.com/pin/create/button/?url=${eFull}&description=${eTitle}&is_video=true&media=${eThumb}`,
+    };
+  }, [shareUrl, fullUrl, title, thumbnailUrl]);
+
   if (!isLoading && !video) {
     return <div>Video not found</div>;
   }
@@ -128,12 +229,13 @@ export function VideoPage() {
           ) : (
             <div>
               <VideoPlayer
-                videoId={video?.id || ""}
                 url={video?.url || ""}
                 mime={video?.mimeType || ""}
                 poster={video?.thumb || ""}
                 loop={[34236, 22].includes(video?.kind || 0)}
                 className="w-full max-h-[80dvh] aspect-video rounded-lg"
+                onTimeUpdate={setCurrentPlayPos}
+                initialPlayPos={initialPlayPos}
               />
               <div className="flex flex-col gap-4 p-4">
                 {video?.title && (
@@ -174,6 +276,74 @@ export function VideoPage() {
                         authorPubkey={video.pubkey}
                       />
                       <FollowButton pubkey={video.pubkey} />
+                      <Dialog open={shareOpen} onOpenChange={setShareOpen}>
+                        <DialogTrigger asChild>
+                          <button
+                            className="rounded-full p-2 hover:bg-accent transition-colors"
+                            title="Share"
+                            aria-label="Share"
+                          >
+                            <LinkIcon className="w-6 h-6" />
+                          </button>
+                        </DialogTrigger>
+                        <DialogContent>
+                          <DialogHeader>
+                            <DialogTitle>Share this video</DialogTitle>
+                            <DialogDescription>
+                              Share this video on your favorite platform or copy the link.
+                            </DialogDescription>
+                          </DialogHeader>
+                          <div className="flex items-center gap-2 mb-4">
+                            <Input
+                              type="text"
+                              value={shareUrl}
+                              readOnly
+                              className="flex-1 text-xs"
+                              onFocus={e => e.target.select()}
+                            />
+                            <Button
+                              size="sm"
+                              className="ml-2"
+                              onClick={() => {
+                                navigator.clipboard.writeText(shareUrl);
+                              }}
+                            >
+                              Copy
+                            </Button>
+                          </div>
+                          <div className="flex items-center gap-2 mb-4">
+                            <Checkbox
+                              id="timestamp-checkbox"
+                              checked={includeTimestamp}
+                              onCheckedChange={checked => setIncludeTimestamp(!!checked)}
+                            />
+                            <label htmlFor="timestamp-checkbox" className="flex items-center gap-2 cursor-pointer select-none">
+                              <Clock className="w-4 h-4" />
+                              <span>Include current timestamp</span>
+                            </label>
+                          </div>
+                          <div className="flex flex-wrap gap-4 justify-center mt-2">
+                            <a href={shareLinks.mailto} target="_blank" rel="noopener noreferrer" title="Share via Email">
+                              <Mail className="w-7 h-7" />
+                            </a>
+                            <a href={shareLinks.whatsapp} target="_blank" rel="noopener noreferrer" title="Share on WhatsApp">
+                              <Send className="w-7 h-7" />
+                            </a>
+                            <a href={shareLinks.x} target="_blank" rel="noopener noreferrer" title="Share on X">
+                              <Twitter className="w-7 h-7" />
+                            </a>
+                            <a href={shareLinks.reddit} target="_blank" rel="noopener noreferrer" title="Share on Reddit">
+                              <Globe className="w-7 h-7" />
+                            </a>
+                            <a href={shareLinks.facebook} target="_blank" rel="noopener noreferrer" title="Share on Facebook">
+                              <Facebook className="w-7 h-7" />
+                            </a>
+                            <a href={shareLinks.pinterest} target="_blank" rel="noopener noreferrer" title="Share on Pinterest">
+                              <Share2 className="w-7 h-7" />
+                            </a>
+                          </div>
+                        </DialogContent>
+                      </Dialog>
                     </div>
                   )}
                 </div>

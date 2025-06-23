@@ -9,6 +9,14 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/componen
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { X } from 'lucide-react';
+import { useUserBlossomServers } from '@/hooks/useUserBlossomServers';
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuCheckboxItem,
+} from '@/components/ui/dropdown-menu';
 
 export function VideoUpload() {
   const [title, setTitle] = useState('');
@@ -17,17 +25,19 @@ export function VideoUpload() {
   const [tagInput, setTagInput] = useState('');
   const [file, setFile] = useState<File | null>(null);
   const [thumbnail, setThumbnail] = useState<File | null>(null);
+  const [selectedServers, setSelectedServers] = useState<string[]>([]);
   
   const { user } = useCurrentUser();
   const { mutateAsync: uploadFile } = useUploadFile();
   const { mutate: publish } = useNostrPublish();
+  const { data: blossomServers = [] } = useUserBlossomServers();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!file || !thumbnail || !user) return;
 
     try {
-      // Upload video and thumbnail to Blossom
+      // Upload video and thumbnail to Blossom (TODO: use selectedServers)
       const [[, videoUrl]] = await uploadFile(file);
       const [[, thumbUrl]] = await uploadFile(thumbnail);
 
@@ -69,6 +79,7 @@ export function VideoUpload() {
       setThumbnail(null);
       setTags([]);
       setTagInput('');
+      setSelectedServers([]);
     } catch (error) {
       console.error('Upload failed:', error);
     }
@@ -86,6 +97,14 @@ export function VideoUpload() {
 
   const removeTag = (tagToRemove: string) => {
     setTags(tags.filter(tag => tag !== tagToRemove));
+  };
+
+  const toggleServer = (server: string) => {
+    setSelectedServers((prev) =>
+      prev.includes(server)
+        ? prev.filter((s) => s !== server)
+        : [...prev, server]
+    );
   };
 
   if (!user) {
@@ -166,6 +185,41 @@ export function VideoUpload() {
               onChange={(e) => setThumbnail(e.target.files?.[0] || null)}
               required
             />
+          </div>
+
+          {/* Blossom server multi-select dropdown menu */}
+          <div className="space-y-2">
+            <Label>Blossom Servers</Label>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="w-full justify-between">
+                  {selectedServers.length > 0
+                    ? `${selectedServers.length} selected`
+                    : 'Select Blossom servers'}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-full min-w-[16rem] max-h-60 overflow-y-auto">
+                {blossomServers.length === 0 && (
+                  <DropdownMenuItem disabled>No Blossom servers found</DropdownMenuItem>
+                )}
+                {blossomServers.map(server => (
+                  <DropdownMenuCheckboxItem
+                    key={server}
+                    checked={selectedServers.includes(server)}
+                    onCheckedChange={() => toggleServer(server)}
+                  >
+                    {server}
+                  </DropdownMenuCheckboxItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+            {selectedServers.length > 0 && (
+              <div className="flex flex-wrap gap-2 mt-2">
+                {selectedServers.map(server => (
+                  <Badge key={server} variant="outline">{server}</Badge>
+                ))}
+              </div>
+            )}
           </div>
         </CardContent>
         <CardFooter>

@@ -1,6 +1,6 @@
 {
-  "short_name": "PlayPlay",
-  "name": "PlayPlay Video Client",
+  "short_name": "nostube",
+  "name": "nostube",
   "icons": [],
   "start_url": ".",
   "display": "standalone",
