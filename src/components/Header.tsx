@@ -20,7 +20,7 @@ export function Header() {
             <MenuIcon/>
           </Button>
           <Link to="/" className="text-xl font-bold">
-            NostrTube
+            nostube
           </Link>
         </div>
 

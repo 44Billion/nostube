@@ -45,7 +45,7 @@ export function VideoUpload() {
 
       // Publish Nostr event (NIP-71)
       publish({
-        kind: 34235,
+        kind: 21, // TODO choose based on dimension
         content: description,
         tags: [
           ['d', videoId],
@@ -58,7 +58,7 @@ export function VideoUpload() {
           ['dim', dimensions],
           ['size', file.size.toString()],
           ...tags.map(tag => ['t', tag]),
-          ['client', 'nostr-tube']
+          ['client', 'nostube'],
         ]
       });
 

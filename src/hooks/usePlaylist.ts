@@ -5,6 +5,7 @@ import { useNostrPublish } from './useNostrPublish';
 
 export interface Video {
   id: string;
+  kind: number;
   title?: string;
   added_at: number;
 }
@@ -48,8 +49,9 @@ export function usePlaylists() {
 
         // Get video references from 'a' tags
         const videos: Video[] = event.tags
-          .filter(t => t[0] === 'a' && t[1]?.startsWith('1:'))
+          .filter(t => t[0] === 'a' ) // TODO check kinds
           .map(t => ({
+            kind: parseInt(t[1].split(':')[0], 10),
             id: t[1].split(':')[1], // Extract note ID from "1:&lt;note-id&gt;"
             title: t[2], // Optional title specified in tag
             added_at: parseInt(t[3] || '0', 10) || event.created_at,
@@ -79,10 +81,11 @@ export function usePlaylists() {
         // Add video references as 'a' tags
         ...playlist.videos.map(video => ([
           'a',
-          `1:${video.id}`, // Reference format for notes
+          `${video.kind}:${video.id}`, // Reference format for notes
           video.title || '',
           video.added_at.toString(),
         ])),
+        ['client', 'nostube'],
       ];
 
       await publishEvent({
@@ -110,7 +113,7 @@ export function usePlaylists() {
     await updatePlaylist.mutateAsync(playlist);
   };
 
-  const addVideo = async (playlistId: string, videoId: string, videoTitle?: string) => {
+  const addVideo = async (playlistId: string, videoId: string, videoKind: number, videoTitle?: string) => {
     const playlist = query.data?.find(p => p.identifier === playlistId);
     if (!playlist) throw new Error('Playlist not found');
 
@@ -125,6 +128,7 @@ export function usePlaylists() {
         ...playlist.videos,
         {
           id: videoId,
+          kind: videoKind,
           title: videoTitle,
           added_at: Math.floor(Date.now() / 1000),
         },

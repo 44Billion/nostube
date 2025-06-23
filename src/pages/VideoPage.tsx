@@ -53,7 +53,7 @@ export function VideoPage() {
           },
         ],
         {
-          signal: AbortSignal.any([signal, AbortSignal.timeout(1000)]),
+          signal: AbortSignal.any([signal, AbortSignal.timeout(1500)]),
           relays: fullRelays,
         }
       );
@@ -128,6 +128,7 @@ export function VideoPage() {
           ) : (
             <div>
               <VideoPlayer
+                videoId={video?.id || ""}
                 url={video?.url || ""}
                 mime={video?.mimeType || ""}
                 poster={video?.thumb || ""}
@@ -165,6 +166,7 @@ export function VideoPage() {
                     <div className="flex items-center gap-2">
                       <AddToPlaylistButton
                         videoId={video.id}
+                        videoKind={video.kind}
                         videoTitle={video.title}
                       />
                       <ButtonWithReactions

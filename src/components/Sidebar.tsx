@@ -29,7 +29,7 @@ export function Sidebar() {
   const libraryItems = [
     { name: "Subscriptions", icon: Users, href: "/subscriptions" },
     { name: "History", icon: History, href: "/history", disabled: true },
-    { name: "Playlists", icon: ListVideo, href: "/playlists", disabled: true },
+    { name: "Playlists", icon: ListVideo, href: "/playlists" },
     {
       name: "Your videos",
       icon: Play,

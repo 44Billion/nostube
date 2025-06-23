@@ -23,10 +23,11 @@ import { useToast } from '@/hooks/useToast';
 
 interface AddToPlaylistButtonProps {
   videoId: string;
+  videoKind: number;
   videoTitle?: string;
 }
 
-export function AddToPlaylistButton({ videoId, videoTitle }: AddToPlaylistButtonProps) {
+export function AddToPlaylistButton({ videoId, videoTitle, videoKind }: AddToPlaylistButtonProps) {
   const { user } = useCurrentUser();
   const { playlists, isLoading, addVideo } = usePlaylists();
   const { toast } = useToast();
@@ -42,7 +43,7 @@ export function AddToPlaylistButton({ videoId, videoTitle }: AddToPlaylistButton
   const handleAddToPlaylist = async (playlistId: string, playlistName: string) => {
     try {
       setIsAdding(true);
-      await addVideo(playlistId, videoId, videoTitle);
+      await addVideo(playlistId, videoId, videoKind, videoTitle );
       toast({
         title: 'Video added to playlist',
         description: `Successfully added to "${playlistName}"`,

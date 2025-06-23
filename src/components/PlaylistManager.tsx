@@ -23,6 +23,8 @@ import {
   AccordionTrigger,
 } from '@/components/ui/accordion';
 import { Loader2 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { nip19 } from 'nostr-tools';
 
 function formatDate(timestamp: number) {
   return new Date(timestamp * 1000).toLocaleDateString(undefined, {
@@ -38,6 +40,8 @@ interface VideoListProps {
 }
 
 function VideoList({ videos, onRemove }: VideoListProps) {
+const navigate = useNavigate();
+
   if (videos.length === 0) {
     return (
       <p className="text-sm text-muted-foreground py-2">
@@ -55,7 +59,7 @@ function VideoList({ videos, onRemove }: VideoListProps) {
         >
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium truncate">
-              {video.title || 'Untitled Video'}
+              <a href='#' onClick={() => navigate(`/video/${nip19.neventEncode({id: video.id, kind: video.kind})}`)}>{video.title || 'Untitled Video'}</a>
             </p>
             <p className="text-xs text-muted-foreground">
               Added {formatDate(video.added_at)}
