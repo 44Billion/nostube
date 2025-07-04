@@ -67,7 +67,7 @@ export function ButtonWithReactions({ eventId, authorPubkey, className }: Button
     <Tooltip>
       <TooltipTrigger asChild>
         <Button
-          variant="ghost"
+          variant="secondary"
           size="sm"
           className={cn("space-x-2", className)}
           onClick={handleLike}

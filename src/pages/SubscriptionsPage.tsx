@@ -33,7 +33,6 @@ export function SubscriptionsPage() {
 
       <VideoGrid
         videos={videos}
-        videoType={'all'}
         isLoading={isLoading}
         showSkeletons={true}
         layoutMode="auto"

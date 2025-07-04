@@ -304,13 +304,13 @@ export function VideoPage() {
                       <FollowButton pubkey={video.pubkey} />
                       <Dialog open={shareOpen} onOpenChange={setShareOpen}>
                         <DialogTrigger asChild>
-                          <button
-                            className="rounded-full p-2 hover:bg-accent transition-colors"
+                          <Button
                             title="Share"
                             aria-label="Share"
+                            variant="secondary"
                           >
                             <LinkIcon className="w-6 h-6" />
-                          </button>
+                          </Button>
                         </DialogTrigger>
                         <DialogContent>
                           <DialogHeader>
