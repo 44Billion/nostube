@@ -37,7 +37,7 @@ export function LikedVideosPage() {
   return (
     <div className="p-4">
       <div className="text-2xl font-semibold mb-4">Liked Videos</div>
-      <VideoGrid videos={videos} videoType={'all'} />
+      <VideoGrid videos={videos} layoutMode="auto" />
     </div>
   );
 }

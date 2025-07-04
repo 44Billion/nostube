@@ -33,9 +33,9 @@ export function HomePage() {
 
       <VideoGrid
         videos={videos}
-        videoType={'videos'}
         isLoading={isLoading}
         showSkeletons={true}
+        layoutMode="horizontal"
       />
 
       {/* Infinite scroll trigger */}

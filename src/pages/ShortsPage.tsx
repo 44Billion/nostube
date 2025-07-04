@@ -29,9 +29,9 @@ export function ShortsPage() {
     <div className=" sm:px-4 sm:py-6">
       <VideoGrid
         videos={videos}
-        videoType={"shorts"}
         isLoading={isLoading}
         showSkeletons={true}
+        layoutMode="vertical"
       />
 
       <div

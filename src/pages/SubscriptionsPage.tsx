@@ -36,6 +36,7 @@ export function SubscriptionsPage() {
         videoType={'all'}
         isLoading={isLoading}
         showSkeletons={true}
+        layoutMode="auto"
       />
 
       {/* Infinite scroll trigger */}
