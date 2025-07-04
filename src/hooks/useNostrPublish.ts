@@ -5,14 +5,19 @@ import { useCurrentUser } from "./useCurrentUser";
 
 import type { NostrEvent } from "@nostrify/nostrify";
 
-export function useNostrPublish(): UseMutationResult<NostrEvent> {
+type PublishArgs = {
+  event: Omit<NostrEvent, 'id' | 'pubkey' | 'sig'>;
+  relays?: string[];
+}
+
+export function useNostrPublish(): UseMutationResult<NostrEvent, Error, PublishArgs> {
   const { nostr } = useNostr();
   const { user } = useCurrentUser();
 
   return useMutation({
-    mutationFn: async (t: Omit<NostrEvent, 'id' | 'pubkey' | 'sig'>) => {
+    mutationFn: async (t: PublishArgs) => {
       if (user) {
-        const tags = t.tags ?? [];
+        const tags = t.event.tags ?? [];
 
         // Add the client tag if it doesn't exist
         if (!tags.some((tag) => tag[0] === "client")) {
@@ -20,13 +25,13 @@ export function useNostrPublish(): UseMutationResult<NostrEvent> {
         }
 
         const event = await user.signer.signEvent({
-          kind: t.kind,
-          content: t.content ?? "",
+          kind: t.event.kind,
+          content: t.event.content ?? "",
           tags,
-          created_at: t.created_at ?? Math.floor(Date.now() / 1000),
+          created_at: t.event.created_at ?? Math.floor(Date.now() / 1000),
         });
 
-        await nostr.event(event, { signal: AbortSignal.timeout(5000), relays: ["wss://haven.slidestr.net"] });
+        await nostr.event(event, { signal: AbortSignal.timeout(5000), relays: t.relays });
         return event;
       } else {
         throw new Error("User is not logged in");

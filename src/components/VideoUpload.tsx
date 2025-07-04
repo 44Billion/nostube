@@ -9,12 +9,11 @@ import { Badge } from "@/components/ui/badge";
 import {
   X,
   Loader2,
-  Link as LinkIcon,
   Trash,
   Check,
+  ExternalLink,
 } from "lucide-react";
 import { useAppContext } from "@/hooks/useAppContext";
-import { Progress } from "@/components/ui/progress";
 import {
   mirrorBlobsToServers,
   uploadFileToMultipleServers,
@@ -26,6 +25,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useNostrPublish } from "@/hooks/useNostrPublish";
 import * as MP4Box from "mp4box";
 import type { Movie } from "mp4box";
+import { nip19 } from "nostr-tools";
 
 export function VideoUpload() {
   const [title, setTitle] = useState("");
@@ -34,7 +34,6 @@ export function VideoUpload() {
   const [tagInput, setTagInput] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [thumbnail, setThumbnail] = useState<File | null>(null);
-  const [progress, setProgress] = useState(0);
   const [uploadInfo, setUploadInfo] = useState<{
     dimension?: string;
     sizeMB?: number;
@@ -118,6 +117,7 @@ export function VideoUpload() {
       const event = {
         kind,
         content: description,
+        created_at: Math.floor(Date.now() / 1000),
         tags: [
           ["title", title],
           ["published_at", Math.floor(Date.now() / 1000).toString()],
@@ -128,7 +128,18 @@ export function VideoUpload() {
         ],
       };
 
-      publish(event);
+      publish({event, relays: ['wss://haven.slidestr.net']}, {
+        onSuccess: (publishedEvent, vars) => {
+          navigate(
+            `/video/${nip19.neventEncode({
+              kind: publishedEvent.kind,
+              id: publishedEvent.id,
+              author: publishedEvent.pubkey,
+              relays: vars.relays
+            })}`
+          );
+        },
+      });
       console.log(event);
 
       // Reset form
@@ -138,9 +149,7 @@ export function VideoUpload() {
       setThumbnail(null);
       setTags([]);
       setTagInput("");
-      setProgress(0);
     } catch (error) {
-      setProgress(0);
       console.error("Upload failed:", error);
     }
   };
@@ -183,7 +192,6 @@ export function VideoUpload() {
       setFile(file);
       setUploadInfo({ uploadedBlobs: [], mirroredBlobs: [] });
       setUploadStarted(true);
-      setProgress(1); // show spinner immediately
       // Start upload automatically
       try {
         const uploadedBlobs = await uploadFileToMultipleServers({
@@ -259,15 +267,15 @@ export function VideoUpload() {
             mirroredBlobs,
           }));
         }
-        setProgress(100);
       } catch {
-        setProgress(0);
         setUploadStarted(false);
         setUploadInfo({ uploadedBlobs: [], mirroredBlobs: [] });
         // Optionally show error toast
       }
     }
+    setUploadStarted(false);
   };
+  
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
     accept: { "video/*": [] },
@@ -368,7 +376,6 @@ export function VideoUpload() {
     setTagInput("");
     setFile(null);
     setThumbnail(null);
-    setProgress(0);
     setUploadInfo({ uploadedBlobs: [], mirroredBlobs: [] });
     setUploadStarted(false);
     setThumbnailBlob(null);
@@ -380,9 +387,10 @@ export function VideoUpload() {
   }
 
   const formatBlobUrl = (url: string) => {
-    return (
-      url.replace("https://", "").replace("http://", "").replace(/\/.*$/,'')
-    );
+    return url
+      .replace("https://", "")
+      .replace("http://", "")
+      .replace(/\/.*$/, "");
   };
 
   return (
@@ -464,12 +472,23 @@ export function VideoUpload() {
                         )}
                         {uploadInfo.videoCodec.startsWith("vp09") && (
                           <div className="col-span-2 mt-2 text-sm text-yellow-700 bg-yellow-100 border border-yellow-300 rounded p-2">
-                            <b>Warning:</b> VP9 videos (<code>vp09</code>) are not supported on iOS or Safari browsers. For maximum compatibility, use H.264/AVC.
+                            <b>Warning:</b> VP9 videos (<code>vp09</code>) are
+                            not supported on iOS or Safari browsers. For maximum
+                            compatibility, use H.264/AVC.
                           </div>
                         )}
                         {uploadInfo.videoCodec.startsWith("hvc1") && (
                           <div className="col-span-2 mt-2 text-sm text-blue-800 bg-blue-100 border border-blue-300 rounded p-2">
-                            <b>Info:</b> H.265/HEVC (<code>hvc1</code>) is widely supported. Only some de-googled Linux browsers may have issues.
+                            <b>Info:</b> H.265/HEVC (<code>hvc1</code>) is
+                            widely supported. Only some de-googled Linux
+                            browsers may have issues.
+                          </div>
+                        )}
+                        {uploadInfo.videoCodec.startsWith("avc1") && (
+                          <div className="col-span-2 mt-2 text-sm text-green-800 bg-green-100 border border-green-300 rounded p-2">
+                            <b>Great:</b> H.264/AVC (<code>avc1</code>) is the
+                            most widely supported video codec and will play on
+                            all browsers and devices.
                           </div>
                         )}
                       </>
@@ -570,7 +589,7 @@ export function VideoUpload() {
                           rel="noopener noreferrer"
                           title="Open uploaded video URL"
                         >
-                          <LinkIcon className="w-5 h-5" />
+                          <ExternalLink className="w-5 h-5" />
                         </a>
                       </li>
                     ))}
@@ -595,7 +614,7 @@ export function VideoUpload() {
                           rel="noopener noreferrer"
                           title="Open mirrored video URL"
                         >
-                          <LinkIcon className="w-5 h-5" />
+                          <ExternalLink className="w-5 h-5" />
                         </a>
                       </li>
                     ))}
@@ -603,7 +622,7 @@ export function VideoUpload() {
                 </div>
               )}
             {/* Infinite progress spinner while uploading */}
-            {progress > 0 && progress < 100 && (
+            {uploadStarted && (
               <div className="flex items-center gap-2 mt-4">
                 <Loader2 className="animate-spin h-5 w-5 text-primary" />
                 <span className="text-sm text-muted-foreground">
@@ -718,14 +737,6 @@ export function VideoUpload() {
             </>
           )}
 
-          {progress > 0 && progress < 100 && (
-            <div className="my-4">
-              <Progress value={progress} max={100} />
-              <div className="text-xs text-muted-foreground mt-1">
-                {progress}%
-              </div>
-            </div>
-          )}
         </CardContent>
         <CardFooter className="flex justify-end gap-2">
           <Button
@@ -748,7 +759,7 @@ export function VideoUpload() {
               !thumbnailBlob
             }
           >
-            Publish
+            Publish video
           </Button>
         </CardFooter>
       </form>

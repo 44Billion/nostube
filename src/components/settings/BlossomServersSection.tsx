@@ -20,6 +20,7 @@ import {
   DropdownMenuCheckboxItem,
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
+import { useUserBlossomServers } from "@/hooks/useUserBlossomServers";
 
 const presetBlossomServers: BlossomServer[] = [
   {
@@ -34,6 +35,19 @@ const availableTags: BlossomServerTag[] = ["mirror", "initial upload"];
 export function BlossomServersSection() {
   const { config, updateConfig } = useAppContext();
   const [newServerUrl, setNewServerUrl] = useState("");
+  const userBlossomServers = useUserBlossomServers();
+
+  /*
+  Would be good for initial load of the app, but not for the dialog
+  useEffect(() => {
+    if (
+      userBlossomServers.data &&
+      (config.blossomServers == undefined || config.blossomServers?.length == 0)
+    ) {
+      handleResetServers();
+    }
+  }, [userBlossomServers.data, config.blossomServers]);
+*/
 
   const handleAddServer = () => {
     if (newServerUrl.trim()) {
@@ -61,10 +75,21 @@ export function BlossomServersSection() {
   };
 
   const handleResetServers = () => {
-    updateConfig((currentConfig) => ({
-      ...currentConfig,
-      blossomServers: [...presetBlossomServers],
-    }));
+    if (userBlossomServers.data && userBlossomServers.data?.length > 0) {
+      updateConfig((currentConfig) => ({
+        ...currentConfig,
+        blossomServers: userBlossomServers.data.map((s) => ({
+          url: s,
+          name: s.replace(/^https?:\/\//, ""),
+          tags: [],
+        })),
+      }));
+    } else {
+      updateConfig((currentConfig) => ({
+        ...currentConfig,
+        blossomServers: [...presetBlossomServers],
+      }));
+    }
   };
 
   const handleToggleTag = (serverUrl: string, tag: BlossomServerTag) => {
@@ -122,7 +147,7 @@ export function BlossomServersSection() {
                     >
                       <div className="flex flex-col gap-1">
                         <div className="flex gap-2 mt-1">
-                        <span>{server.name || server.url}</span>
+                          <span>{server.name || server.url}</span>
                           {server.tags.map((tag) => (
                             <Badge
                               key={tag}
@@ -137,7 +162,7 @@ export function BlossomServersSection() {
                               {tag}
                             </Badge>
                           ))}
-                      </div>
+                        </div>
                       </div>
                       <div className="flex items-center gap-2">
                         <DropdownMenu>
