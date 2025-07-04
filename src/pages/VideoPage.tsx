@@ -167,7 +167,10 @@ export function VideoPage() {
       const saved = localStorage.getItem(key);
       if (saved) {
         const time = parseFloat(saved);
-        if (!isNaN(time)) return time;
+        if (!isNaN(time) && video.duration && video.duration - time > 5 && time < video.duration - 1) {
+          // Only restore if more than 5 seconds left and not at the end
+          return time;
+        }
       }
     }
     return 0;

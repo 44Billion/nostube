@@ -8,6 +8,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { useState } from "react";
 import { formatDistance } from "date-fns";
+import { useAppContext } from "@/hooks/useAppContext";
+import { NostrEvent } from "nostr-tools";
 
 interface Comment {
   id: string;
@@ -19,6 +21,15 @@ interface Comment {
 interface VideoCommentsProps {
   videoId: string;
   authorPubkey: string;
+}
+
+function mapEventToComment(event: NostrEvent): Comment {
+  return {
+    id: event.id,
+    content: event.content,
+    pubkey: event.pubkey,
+    created_at: event.created_at,
+  };
 }
 
 function CommentItem({ comment }: { comment: Comment }) {
@@ -52,6 +63,7 @@ export function VideoComments({ videoId, authorPubkey }: VideoCommentsProps) {
   const { nostr } = useNostr();
   const { user } = useCurrentUser();
   const { mutate: publish } = useNostrPublish();
+  const { config } = useAppContext();
 
   const { data: comments = [] } = useQuery<Comment[]>({
     queryKey: ["video-comments", videoId],
@@ -59,21 +71,21 @@ export function VideoComments({ videoId, authorPubkey }: VideoCommentsProps) {
       const events = await nostr.query(
         [
           {
-            kinds: [1, 1111],
+            kinds: [1],
             "#e": [videoId],
             limit: 100,
           },
+          {
+            kinds: [1111],
+            "#E": [videoId],
+            limit: 100,
+          },
         ],
-        { signal }
+        { signal, relays: config.relays }
       );
       return events
         .sort((a, b) => b.created_at - a.created_at)
-        .map((event) => ({
-          id: event.id,
-          content: event.content,
-          pubkey: event.pubkey,
-          created_at: event.created_at,
-        }));
+        .map(mapEventToComment);
     },
   });
 
@@ -81,7 +93,7 @@ export function VideoComments({ videoId, authorPubkey }: VideoCommentsProps) {
     e.preventDefault();
     if (!user || !newComment.trim()) return;
 
-    publish({
+    const draftEvent = {
       kind: 1111,
       content: newComment,
       tags: [
@@ -91,7 +103,8 @@ export function VideoComments({ videoId, authorPubkey }: VideoCommentsProps) {
         ["p", authorPubkey],
         ["client", "nostube"],
       ],
-    });
+    };
+    publish(draftEvent);
 
     setNewComment("");
   };

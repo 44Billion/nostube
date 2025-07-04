@@ -47,7 +47,7 @@ export function VideoPlayer({
 
   // Ref callback for hls-video custom element
   const hlsRef = useCallback((node: Element | null) => {
-    setHlsEl(node && 'currentTime' in node ? (node as HTMLVideoElement) : null);
+    setHlsEl(node && "currentTime" in node ? (node as HTMLVideoElement) : null);
   }, []);
 
   const handleTimeUpdate = useCallback(() => {
@@ -61,6 +61,7 @@ export function VideoPlayer({
     <media-controller className={className}>
       {isHls ? (
         <hls-video
+          className="rounded-lg"
           src={url}
           slot="media"
           autoPlay
@@ -78,8 +79,12 @@ export function VideoPlayer({
           autoPlay
           loop={loop}
           poster={poster}
+          className="rounded-lg "
           onTimeUpdate={handleTimeUpdate}
-        />
+        >
+          {/* TODO: add captions <track kind="captions" /> */}
+          {/* TODO: add fallback sources <source src={url} type={mime} /> */}
+        </video>
       )}
       <media-control-bar>
         <media-play-button />
