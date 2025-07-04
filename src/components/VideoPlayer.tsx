@@ -45,6 +45,31 @@ export function VideoPlayer({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialPlayPos, isHls, hlsEl]);
 
+  // Frame-by-frame navigation with . and , keys (global listener)
+  useEffect(() => {
+    const el = isHls ? hlsEl : videoRef.current;
+    if (!el) return;
+
+    function handleKeyDown(e: KeyboardEvent) {
+      if (!el) return;
+      // Only step if video is paused and present
+      if (!el.paused) return;
+      // Assume 30fps for frame step
+      const frameStep = 1 / 30;
+      if (e.key === ".") {
+        el.currentTime = Math.min(el.duration, el.currentTime + frameStep);
+        e.preventDefault();
+      } else if (e.key === ",") {
+        el.currentTime = Math.max(0, el.currentTime - frameStep);
+        e.preventDefault();
+      }
+    }
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isHls, hlsEl]);
+
   // Ref callback for hls-video custom element
   const hlsRef = useCallback((node: Element | null) => {
     setHlsEl(node && "currentTime" in node ? (node as HTMLVideoElement) : null);
@@ -70,6 +95,7 @@ export function VideoPlayer({
           crossorigin
           onTimeUpdate={handleTimeUpdate}
           ref={hlsRef}
+          tabIndex={0}
         ></hls-video>
       ) : (
         <video
@@ -81,6 +107,7 @@ export function VideoPlayer({
           poster={poster}
           className="rounded-lg "
           onTimeUpdate={handleTimeUpdate}
+          tabIndex={0}
         >
           {/* TODO: add captions <track kind="captions" /> */}
           {/* TODO: add fallback sources <source src={url} type={mime} /> */}

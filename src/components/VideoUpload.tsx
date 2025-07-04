@@ -6,7 +6,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { X, Loader2, Link as LinkIcon } from "lucide-react";
+import {
+  X,
+  Loader2,
+  Link as LinkIcon,
+  Trash,
+  Check,
+} from "lucide-react";
 import { useAppContext } from "@/hooks/useAppContext";
 import { Progress } from "@/components/ui/progress";
 import {
@@ -18,6 +24,8 @@ import { BlobDescriptor } from "blossom-client-sdk";
 import { useNavigate } from "react-router-dom";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useNostrPublish } from "@/hooks/useNostrPublish";
+import * as MP4Box from "mp4box";
+import type { Movie } from "mp4box";
 
 export function VideoUpload() {
   const [title, setTitle] = useState("");
@@ -33,6 +41,8 @@ export function VideoUpload() {
     duration?: number;
     uploadedBlobs: BlobDescriptor[];
     mirroredBlobs: BlobDescriptor[];
+    videoCodec?: string;
+    audioCodec?: string;
   }>({ uploadedBlobs: [], mirroredBlobs: [] });
   const [uploadStarted, setUploadStarted] = useState(false);
   const [thumbnailBlob, setThumbnailBlob] = useState<Blob | null>(null);
@@ -190,12 +200,52 @@ export function VideoUpload() {
         const duration = Math.round(video.duration);
         const dimensions = `${video.videoWidth}x${video.videoHeight}`;
         const sizeMB = acceptedFiles[0].size / 1024 / 1024;
+
+        // --- MP4Box.js: Extract codec info ---
+        function getCodecsFromFile(
+          file: File
+        ): Promise<{ videoCodec?: string; audioCodec?: string }> {
+          return new Promise((resolve, reject) => {
+            const mp4boxfile = MP4Box.createFile();
+            let videoCodec: string | undefined;
+            let audioCodec: string | undefined;
+            mp4boxfile.onError = (err: unknown) => reject(err);
+            mp4boxfile.onReady = (info: Movie) => {
+              for (const track of info.tracks) {
+                if (track.type && track.type === "video" && track.codec)
+                  videoCodec = track.codec;
+                if (track.type && track.type === "audio" && track.codec)
+                  audioCodec = track.codec;
+              }
+              resolve({ videoCodec, audioCodec });
+            };
+            const fileReader = new FileReader();
+            fileReader.onload = () => {
+              const arrayBuffer = fileReader.result as ArrayBuffer;
+              const mp4boxBuffer = Object.assign(arrayBuffer, { fileStart: 0 });
+              mp4boxfile.appendBuffer(mp4boxBuffer);
+              mp4boxfile.flush();
+            };
+            fileReader.onerror = reject;
+            fileReader.readAsArrayBuffer(file);
+          });
+        }
+
+        let codecs: { videoCodec?: string; audioCodec?: string } = {};
+        try {
+          codecs = await getCodecsFromFile(acceptedFiles[0]);
+        } catch {
+          codecs = {};
+        }
+
         setUploadInfo({
           dimension: dimensions,
           sizeMB: Number(sizeMB.toFixed(2)),
           duration,
           uploadedBlobs: uploadedBlobs,
           mirroredBlobs: [],
+          videoCodec: codecs.videoCodec,
+          audioCodec: codecs.audioCodec,
         });
 
         if (blossomMirrorServers && blossomMirrorServers.length > 0) {
@@ -310,12 +360,29 @@ export function VideoUpload() {
     };
   }, [thumbnailUrl]);
 
+  // Reset all form fields and state
+  const handleReset = () => {
+    setTitle("");
+    setDescription("");
+    setTags([]);
+    setTagInput("");
+    setFile(null);
+    setThumbnail(null);
+    setProgress(0);
+    setUploadInfo({ uploadedBlobs: [], mirroredBlobs: [] });
+    setUploadStarted(false);
+    setThumbnailBlob(null);
+    setThumbnailSource("generated");
+  };
+
   if (!user) {
     return <div>Please log in to upload videos</div>;
   }
 
   const formatBlobUrl = (url: string) => {
-    return url.replace("https://", "").replace("http://", "").slice(0, 42) + "...";
+    return (
+      url.replace("https://", "").replace("http://", "").replace(/\/.*$/,'')
+    );
   };
 
   return (
@@ -378,6 +445,42 @@ export function VideoUpload() {
                         {uploadInfo.duration} seconds
                       </span>
                     </div>
+                    {uploadInfo.videoCodec && (
+                      <>
+                        <div className="text-muted-foreground">
+                          Video Codec:
+                        </div>
+                        <div>
+                          <span className="font-mono">
+                            {uploadInfo.videoCodec}
+                          </span>
+                        </div>
+                        {uploadInfo.videoCodec.startsWith("av01") && (
+                          <div className="col-span-2 mt-2 text-sm text-yellow-700 bg-yellow-100 border border-yellow-300 rounded p-2">
+                            <b>Warning:</b> AV1 videos (<code>av01</code>)
+                            cannot be played on iOS or Safari browsers. Please
+                            use H.264/AVC for maximum compatibility.
+                          </div>
+                        )}
+                        {uploadInfo.videoCodec.startsWith("vp09") && (
+                          <div className="col-span-2 mt-2 text-sm text-yellow-700 bg-yellow-100 border border-yellow-300 rounded p-2">
+                            <b>Warning:</b> VP9 videos (<code>vp09</code>) are not supported on iOS or Safari browsers. For maximum compatibility, use H.264/AVC.
+                          </div>
+                        )}
+                        {uploadInfo.videoCodec.startsWith("hvc1") && (
+                          <div className="col-span-2 mt-2 text-sm text-blue-800 bg-blue-100 border border-blue-300 rounded p-2">
+                            <b>Info:</b> H.265/HEVC (<code>hvc1</code>) is widely supported. Only some de-googled Linux browsers may have issues.
+                          </div>
+                        )}
+                      </>
+                    )}
+
+                    {/*uploadInfo.audioCodec && (
+                      <>
+                        <div className="text-muted-foreground">Audio Codec:</div>
+                        <div><span className="font-mono">{uploadInfo.audioCodec}</span></div>
+                      </>
+                    )*/}
                   </div>
                 </div>
               </div>
@@ -456,14 +559,18 @@ export function VideoUpload() {
                   <ul className="flex flex-col gap-1">
                     {(uploadInfo.uploadedBlobs ?? []).map((blob) => (
                       <li key={blob.url} className="flex items-center gap-2">
-                        <Badge variant="secondary">{formatBlobUrl(blob.url)}</Badge>
+                        <Check className="w-5 h-5 text-green-500" />
+
+                        <Badge variant="secondary">
+                          {formatBlobUrl(blob.url)}
+                        </Badge>
                         <a
                           href={blob.url}
                           target="_blank"
                           rel="noopener noreferrer"
                           title="Open uploaded video URL"
                         >
-                          <LinkIcon className="w-6 h-6" />
+                          <LinkIcon className="w-5 h-5" />
                         </a>
                       </li>
                     ))}
@@ -473,19 +580,22 @@ export function VideoUpload() {
             )}
             {uploadInfo.mirroredBlobs &&
               uploadInfo.mirroredBlobs.length > 0 && (
-                <div className="flex flex-col gap-2">
+                <div className="flex flex-col gap-2 mt-4">
                   <Label>Mirrored to...</Label>
                   <ul className="flex flex-col gap-1">
                     {(uploadInfo.mirroredBlobs ?? []).map((blob) => (
                       <li key={blob.url} className="flex items-center gap-2">
-                        <Badge variant="secondary">{blob.url}</Badge>
+                        <Check className="w-5 h-5 text-green-500" />
+                        <Badge variant="secondary">
+                          {formatBlobUrl(blob.url)}
+                        </Badge>
                         <a
                           href={blob.url}
                           target="_blank"
                           rel="noopener noreferrer"
                           title="Open mirrored video URL"
                         >
-                          <LinkIcon className="w-6 h-6" />
+                          <LinkIcon className="w-5 h-5" />
                         </a>
                       </li>
                     ))}
@@ -617,7 +727,16 @@ export function VideoUpload() {
             </div>
           )}
         </CardContent>
-        <CardFooter className="flex justify-end">
+        <CardFooter className="flex justify-end gap-2">
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={handleReset}
+            title="Reset form"
+            aria-label="Reset form"
+          >
+            <Trash className="w-5 h-5" />
+          </Button>
           <Button
             type="submit"
             disabled={
@@ -629,7 +748,7 @@ export function VideoUpload() {
               !thumbnailBlob
             }
           >
-            Upload
+            Publish
           </Button>
         </CardFooter>
       </form>
