@@ -8,6 +8,7 @@ import { NostrEvent } from '@nostrify/nostrify';
 import { formatDistance } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useReportedPubkeys } from '@/hooks/useReportedPubkeys';
+import { PlayProgressBar } from './PlayProgressBar';
 
 function formatDuration(seconds: number): string {
   const hours = Math.floor(seconds / 3600);
@@ -30,6 +31,7 @@ function VideoSuggestionItem({ video }: { video: VideoEvent }) {
       <div className="flex mb-4 hover:bg-accent rounded-lg transition-colors border-none ">
         <div className="relative w-40 h-24 flex-shrink-0">
           <img src={video.thumb} alt={video.title} className="w-full h-full object-cover rounded-md" />
+          <PlayProgressBar videoId={video.id} duration={video.duration} />
           {video.duration > 0 && (
             <div className="absolute bottom-1 right-1 bg-black/80 text-white px-1 rounded text-xs">
               {formatDuration(video.duration)}

@@ -7,8 +7,8 @@ import { formatDuration } from '../lib/formatDuration';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useCurrentUser } from '@/hooks/useCurrentUser';
-import { useEffect, useState, useRef } from 'react';
+import React, { useRef, useState } from 'react';
+import { PlayProgressBar } from './PlayProgressBar';
 
 interface VideoCardProps {
   video: VideoEvent;
@@ -24,38 +24,15 @@ export function VideoCard({ video, hideAuthor, format = 'square' }: VideoCardPro
   const aspectRatio = format == 'vertical' ? 'aspect-[9/16]' : format == 'square' ? 'aspect-[1/1]' : 'aspect-video';
   const maxWidth = format == 'vertical' && 'sm:max-w-[280px] mx-auto';
 
+  const videoRef = useRef<HTMLVideoElement>(null);
   const [isHovered, setIsHovered] = useState(false);
   const [videoLoaded, setVideoLoaded] = useState(false);
-  const videoRef = useRef<HTMLVideoElement>(null);
-
-  const { user } = useCurrentUser();
-  const [playPos, setPlayPos] = useState<number | null>(null);
-
-  // Read play position from localStorage for this user and video
-  useEffect(() => {
-    if (!user || !video.id) {
-      setPlayPos(null);
-      return;
-    }
-    const key = `playpos:${user.pubkey}:${video.id}`;
-    const val = localStorage.getItem(key);
-    if (val) {
-      const n = parseFloat(val);
-      if (!isNaN(n) && n > 0) {
-        setPlayPos(n);
-      } else {
-        setPlayPos(null);
-      }
-    } else {
-      setPlayPos(null);
-    }
-  }, [user, video.id]);
 
   const handleMouseEnter = () => {
     // don't show hover preview for video with content warning
     if (video.contentWarning) return;
 
-    if (video.video) {
+    if (video) {
       setIsHovered(true);
     }
   };
@@ -102,21 +79,11 @@ export function VideoCard({ video, hideAuthor, format = 'square' }: VideoCardPro
               </div>
             )}
             {/* Progress bar at bottom of thumbnail */}
-            {playPos !== null && video.duration > 0 && playPos > 0 && playPos < video.duration - 5 && (
-              <div className="absolute left-0 bottom-0 w-full h-1 bg-black/20 rounded-b-lg overflow-hidden">
-                <div
-                  className="h-full bg-primary rounded-bl-lg transition-all duration-200"
-                  style={{
-                    width: `${Math.min(100, (playPos / video.duration) * 100)}%`,
-                    height: '4px',
-                  }}
-                />
-              </div>
-            )}
-            {isHovered && video.url && (
+            <PlayProgressBar videoId={video.id} duration={video.duration} />
+            {isHovered && video.urls && video.urls.length>0 && (
               <video
                 ref={videoRef}
-                src={video.url}
+                src={video.urls[0]}
                 muted
                 autoPlay={false}
                 loop

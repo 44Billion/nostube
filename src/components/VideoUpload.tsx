@@ -82,9 +82,15 @@ export function VideoUpload() {
         'imeta',
         `dim ${uploadInfo.dimension}`,
         `url ${uploadInfo.uploadedBlobs?.[0].url}`,
+        `x ${uploadInfo.uploadedBlobs?.[0].sha256}`,
         `m ${file.type}`,
-        ...(thumbnailBlobs ? [`image ${thumbnailBlobs[0].url}`] : []),
       ];
+
+      if (thumbnailBlobs && thumbnailBlobs.length > 0) {
+        for (const blob of thumbnailBlobs) {
+          imetaTag.push(`image ${blob.url}`);
+        }
+      }
 
       if (uploadInfo.uploadedBlobs.length > 1) {
         for (const blob of uploadInfo.uploadedBlobs.slice(1)) {
@@ -93,7 +99,7 @@ export function VideoUpload() {
       }
       if (uploadInfo.mirroredBlobs.length > 0) {
         for (const blob of uploadInfo.mirroredBlobs) {
-          imetaTag.push(`mirror ${blob.url}`);
+          imetaTag.push(`fallback ${blob.url}`);
         }
       }
 
@@ -103,6 +109,7 @@ export function VideoUpload() {
         created_at: nowInSecs(),
         tags: [
           ['title', title],
+          ['alt', description],
           ['published_at', nowInSecs().toString()],
           ['duration', uploadInfo.duration?.toString() || '0'],
           imetaTag,
@@ -110,6 +117,24 @@ export function VideoUpload() {
           ['client', 'nostube'],
         ],
       };
+
+      /*
+          ["text-track", "<encoded `kind 6000` event>", "<recommended relay urls>"],
+    ["content-warning", "<reason>"],
+    ["segment", <start>, <end>, "<title>", "<thumbnail URL>"],
+
+    // participants
+    ["p", "<32-bytes hex of a pubkey>", "<optional recommended relay URL>"],
+    ["p", "<32-bytes hex of a pubkey>", "<optional recommended relay URL>"],
+
+    // hashtags
+    ["t", "<tag>"],
+    ["t", "<tag>"],
+
+    // reference links
+    ["r", "<url>"],
+    ["r", "<url>"]
+    */
 
       publish(
         { event, relays: ['wss://haven.slidestr.net'] },

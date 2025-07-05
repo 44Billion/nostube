@@ -224,38 +224,39 @@ export function VideoPage() {
               </div>
             </div>
           ) : (
-            <div>
-              <VideoPlayer
-                url={video?.url || ''}
-                mime={video?.mimeType || ''}
-                poster={video?.thumb || ''}
-                loop={[34236, 22].includes(video?.kind || 0)}
-                className="w-full max-h-[80dvh] aspect-video rounded-lg"
-                onTimeUpdate={setCurrentPlayPos}
-                initialPlayPos={initialPlayPos}
-              />
-              <div className="flex flex-col gap-4 p-4">
-                {video?.title && <h1 className="text-2xl font-bold">{video?.title}</h1>}
+            video &&
+            video.urls.length > 0 && (
+              <div>
+                <VideoPlayer
+                  urls={video.urls}
+                  mime={video.mimeType || ''}
+                  poster={video.thumb || ''}
+                  loop={[34236, 22].includes(video?.kind || 0)}
+                  className="w-full max-h-[80dvh] aspect-video rounded-lg"
+                  onTimeUpdate={setCurrentPlayPos}
+                  initialPlayPos={initialPlayPos}
+                />
+                <div className="flex flex-col gap-4 p-4">
+                  {video?.title && <h1 className="text-2xl font-bold">{video?.title}</h1>}
 
-                <div className="flex items-start justify-between">
-                  <Link to={`/author/${nip19.npubEncode(video?.pubkey || '')}`} className="flex items-center gap-4">
-                    <Avatar>
-                      <AvatarImage src={metadata?.picture} />
-                      <AvatarFallback>{authorName[0]}</AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <div className="font-semibold">{authorName}</div>
-                      <div className="text-sm text-muted-foreground">
-                        {video?.created_at &&
-                          formatDistance(new Date(video.created_at * 1000), new Date(), { addSuffix: true })}
+                  <div className="flex items-start justify-between">
+                    <Link to={`/author/${nip19.npubEncode(video?.pubkey || '')}`} className="flex items-center gap-4">
+                      <Avatar>
+                        <AvatarImage src={metadata?.picture} />
+                        <AvatarFallback>{authorName[0]}</AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <div className="font-semibold">{authorName}</div>
+                        <div className="text-sm text-muted-foreground">
+                          {video?.created_at &&
+                            formatDistance(new Date(video.created_at * 1000), new Date(), { addSuffix: true })}
+                        </div>
                       </div>
-                    </div>
-                  </Link>
+                    </Link>
 
-                  {video && (
                     <div className="flex items-center gap-2">
                       <AddToPlaylistButton videoId={video.id} videoKind={video.kind} videoTitle={video.title} />
-                      <ButtonWithReactions eventId={video.id} authorPubkey={video.pubkey} />
+                      <ButtonWithReactions eventId={video.id} authorPubkey={video.pubkey} kind={video.kind} />
                       <FollowButton pubkey={video.pubkey} />
                       <ShareButton
                         shareOpen={shareOpen}
@@ -266,12 +267,11 @@ export function VideoPage() {
                         shareLinks={shareLinks}
                       />
                     </div>
-                  )}
-                </div>
+                  </div>
 
-                <Separator />
+                  <Separator />
 
-                {/*video &&
+                  {/*video &&
                     (video.dimensions || (video.size && video.size > 0)) && (
                       <div className="text-sm text-muted-foreground space-x-4">
                         {video.dimensions && <span>{video.dimensions}</span>}
@@ -281,19 +281,20 @@ export function VideoPage() {
                       </div>
                     )*/}
 
-                {video && video.tags.length > 0 && (
-                  <div className="flex flex-wrap gap-2">
-                    {video.tags.slice(20).map(tag => (
-                      <Badge key={tag} variant="secondary">
-                        {tag}
-                      </Badge>
-                    ))}
-                  </div>
-                )}
+                  {video && video.tags.length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                      {video.tags.slice(20).map(tag => (
+                        <Badge key={tag} variant="secondary">
+                          {tag}
+                        </Badge>
+                      ))}
+                    </div>
+                  )}
 
-                {video?.description && <CollapsibleText text={video.description} className="text-muted-foreground" />}
+                  {video?.description && <CollapsibleText text={video.description} className="text-muted-foreground" />}
+                </div>
               </div>
-            </div>
+            )
           )}
 
           {video && (

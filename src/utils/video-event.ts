@@ -4,11 +4,6 @@ import { blurHashToDataURL } from '@/workers/blurhashDataURL';
 import type { NostrEvent } from '@nostrify/nostrify';
 import { nip19 } from 'nostr-tools';
 
-type TextTrack = {
-  url: string;
-  lang: string;
-};
-
 export interface VideoEvent {
   id: string;
   kind: number;
@@ -16,13 +11,12 @@ export interface VideoEvent {
   title: string;
   description: string;
   thumb: string;
-  video?: string;
   pubkey: string;
   created_at: number;
   duration: number;
   tags: string[];
   searchText: string;
-  url?: string;
+  urls: string[];
   mimeType?: string;
   dimensions?: string;
   size?: number;
@@ -46,10 +40,9 @@ export function processEvents(events: NostrEvent[], relays: string[], blockPubke
       (video): video is VideoEvent =>
         video !== undefined &&
         Boolean(video.id) &&
-        Boolean(video.url) &&
-        Boolean(video.video) &&
-        video?.url !== undefined &&
-        video.url.indexOf('youtube.com') < 0 &&
+        Boolean(video.urls) &&
+        video?.urls !== undefined &&
+        video.urls[0]?.indexOf('youtube.com') < 0 &&
         (!blockPubkeys || !blockPubkeys[video.pubkey])
     );
 }
@@ -61,22 +54,30 @@ export function processEvent(event: NostrEvent, relays: string[]): VideoEvent | 
 
   if (imetaTag) {
     // Parse imeta tag values
-    const imetaValues = new Map<string, string>();
+    const imetaValues = new Map<string, string[]>();
     for (let i = 1; i < imetaTag.length; i++) {
       const [key, value] = imetaTag[i].split(' ');
       if (key && value) {
-        imetaValues.set(key, value);
+        if (!imetaValues.has(key)) {
+          imetaValues.set(key, [value]);
+        } else {
+          imetaValues.get(key)!.push(value);
+        }
       }
     }
 
-    const url = imetaValues.get('url');
-    const mimeType = imetaValues.get('m');
-    const image = imetaValues.get('image');
-    const thumb = imetaValues.get('thumb');
-    const videoUrl = imetaValues.get('video') || url;
+    const url = imetaValues.get('url')?.[0];
+    const mimeType: string | undefined = imetaValues.get('m')?.[0];
+    const image: string | undefined = imetaValues.get('image')?.[0];
+    const thumb: string | undefined = imetaValues.get('thumb')?.[0];
 
-    const alt = imetaValues.get('alt') || event.content || '';
-    const blurhash = imetaValues.get('blurhash');
+    const videoUrls: string[] = url ? [url] : [];
+    imetaValues.get('fallback')?.forEach(url => videoUrls.push(url));
+    // mirror is bullshit, AI has created fuxx0rd events. Remove soon:
+    imetaValues.get('mirror')?.forEach(url => videoUrls.push(url));
+
+    const alt = imetaValues.get('alt')?.[0] || event.content || '';
+    const blurhash = imetaValues.get('blurhash')?.[0];
     const identifier = event.tags.find(t => t[0] === 'd')?.[1] || '';
     const tags = event.tags.filter(t => t[0] === 't').map(t => t[1]);
     const duration = parseInt(event.tags.find(t => t[0] === 'duration')?.[1] || '0');
@@ -94,14 +95,13 @@ export function processEvent(event: NostrEvent, relays: string[]): VideoEvent | 
       identifier,
       title: event.tags.find(t => t[0] === 'title')?.[1] || alt,
       description: event.content || '',
-      thumb: image || thumb || `${videoThumbService}/${url}` || blurHashToDataURL(blurhash) || '',
-      video: videoUrl,
+      thumb: image || thumb || (url ? `${videoThumbService}/${url}` : '') || blurHashToDataURL(blurhash) || '',
       pubkey: event.pubkey,
       created_at: event.created_at,
       duration,
       tags,
       searchText: '',
-      url,
+      urls: videoUrls,
       mimeType,
       link: nip19.neventEncode({
         kind: event.kind,
@@ -134,13 +134,12 @@ export function processEvent(event: NostrEvent, relays: string[]): VideoEvent | 
       title,
       description,
       thumb: thumb || `${videoThumbService}/${url}`,
-      video: url,
       pubkey: event.pubkey,
       created_at: event.created_at,
       duration,
       tags,
       searchText: '',
-      url,
+      urls: [url],
       mimeType,
       dimensions: event.tags.find(t => t[0] === 'dim')?.[1],
       size: parseInt(event.tags.find(t => t[0] === 'size')?.[1] || '0'),

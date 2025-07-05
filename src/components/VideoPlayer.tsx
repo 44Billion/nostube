@@ -4,7 +4,7 @@ import 'media-chrome';
 import 'hls-video-element';
 
 interface VideoPlayerProps {
-  url: string;
+  urls: string[];
   loop?: boolean;
   mime: string;
   poster?: string;
@@ -17,7 +17,7 @@ interface VideoPlayerProps {
 }
 
 export function VideoPlayer({
-  url,
+  urls,
   mime,
   poster,
   loop = false,
@@ -27,8 +27,11 @@ export function VideoPlayer({
 }: VideoPlayerProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [hlsEl, setHlsEl] = useState<HTMLVideoElement | null>(null);
+  const [currentUrlIndex, setCurrentUrlIndex] = useState(0);
+  const [allFailed, setAllFailed] = useState(false);
+  const [triedHead, setTriedHead] = useState(false);
 
-  const isHls = React.useMemo(() => mime === 'application/vnd.apple.mpegurl' || url.endsWith('.m3u8'), [mime, url]);
+  const isHls = React.useMemo(() => mime === 'application/vnd.apple.mpegurl' || urls[currentUrlIndex]?.endsWith('.m3u8'), [mime, urls, currentUrlIndex]);
 
   // Set initial play position on mount
   useEffect(() => {
@@ -79,12 +82,54 @@ export function VideoPlayer({
     }
   }, [onTimeUpdate, isHls, hlsEl]);
 
+  // Handle error: on first error, do HEAD requests for all remaining URLs to find a working one
+  const handleVideoError = useCallback(async () => {
+    if (!triedHead && urls.length > 1 && currentUrlIndex < urls.length - 1) {
+      setTriedHead(true);
+      // Try HEAD requests for all remaining URLs in parallel
+      const remaining = urls.slice(currentUrlIndex + 1);
+      const checks = await Promise.all(
+        remaining.map(async (url) => {
+          try {
+            const res = await fetch(url, { method: 'HEAD', mode: 'cors' });
+            return res.ok;
+          } catch {
+            return false;
+          }
+        })
+      );
+      const foundIdx = checks.findIndex(ok => ok);
+      if (foundIdx !== -1) {
+        setCurrentUrlIndex(currentUrlIndex + 1 + foundIdx);
+        setAllFailed(false);
+        return;
+      } else {
+        setAllFailed(true);
+        return;
+      }
+    }
+    if (currentUrlIndex < urls.length - 1) {
+      setCurrentUrlIndex(i => i + 1);
+    } else {
+      setAllFailed(true);
+    }
+  }, [currentUrlIndex, urls, triedHead]);
+
+  // Reset triedHead if currentUrlIndex changes (new error sequence)
+  useEffect(() => {
+    setTriedHead(false);
+  }, [currentUrlIndex]);
+
   return (
     <media-controller className={className}>
-      {isHls ? (
+      {allFailed ? (
+        <div className="flex items-center justify-center h-64 text-red-600 font-semibold">
+          Failed to load video from all sources.
+        </div>
+      ) : isHls ? (
         <hls-video
           className="rounded-lg"
-          src={url}
+          src={urls[currentUrlIndex]}
           slot="media"
           autoPlay
           loop={loop}
@@ -93,10 +138,11 @@ export function VideoPlayer({
           onTimeUpdate={handleTimeUpdate}
           ref={hlsRef}
           tabIndex={0}
+          onError={handleVideoError}
         ></hls-video>
       ) : (
         <video
-          src={url}
+          src={urls[currentUrlIndex]}
           ref={videoRef}
           slot="media"
           autoPlay
@@ -105,6 +151,7 @@ export function VideoPlayer({
           className="rounded-lg "
           onTimeUpdate={handleTimeUpdate}
           tabIndex={0}
+          onError={handleVideoError}
         >
           {/* TODO: add captions <track kind="captions" /> */}
           {/* TODO: add fallback sources <source src={url} type={mime} /> */}
