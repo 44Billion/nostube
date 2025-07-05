@@ -1,8 +1,8 @@
-import { clsx, type ClassValue } from "clsx"
-import { twMerge } from "tailwind-merge"
+import { clsx, type ClassValue } from 'clsx';
+import { twMerge } from 'tailwind-merge';
 
 export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs))
+  return twMerge(clsx(inputs));
 }
 
 /**
@@ -14,11 +14,11 @@ export function mergeRelays(relaySets: string[][]): string[] {
   const normalizeRelayUrl = (url: string): string => {
     const trimmed = url.trim();
     if (!trimmed) return trimmed;
-    
+
     if (trimmed.includes('://')) {
       return trimmed;
     }
-    
+
     return `wss://${trimmed}`;
   };
 
@@ -29,10 +29,10 @@ export function mergeRelays(relaySets: string[][]): string[] {
   }
 
   return Array.from(normalizedRelays);
-} 
+}
 
 export function formatFileSize(bytes: number): string {
-  const units = ["B", "KB", "MB", "GB"];
+  const units = ['B', 'KB', 'MB', 'GB'];
   let size = bytes;
   let unitIndex = 0;
 

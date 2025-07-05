@@ -34,10 +34,12 @@ export function usePlaylists() {
       if (!user?.pubkey) return [];
 
       const events = await nostr.query(
-        [{
-          kinds: [PLAYLIST_KIND],
-          authors: [user.pubkey],
-        }],
+        [
+          {
+            kinds: [PLAYLIST_KIND],
+            authors: [user.pubkey],
+          },
+        ],
         { signal }
       );
 
@@ -50,7 +52,7 @@ export function usePlaylists() {
 
         // Get video references from 'a' tags
         const videos: Video[] = event.tags
-          .filter(t => t[0] === 'a' ) // TODO check kinds
+          .filter(t => t[0] === 'a') // TODO check kinds
           .map(t => ({
             kind: parseInt(t[1].split(':')[0], 10),
             id: t[1].split(':')[1], // Extract note ID from "1:&lt;note-id&gt;"
@@ -80,12 +82,12 @@ export function usePlaylists() {
         ['title', playlist.name],
         ['description', playlist.description || ''],
         // Add video references as 'a' tags
-        ...playlist.videos.map(video => ([
+        ...playlist.videos.map(video => [
           'a',
           `${video.kind}:${video.id}`, // Reference format for notes
           video.title || '',
           video.added_at.toString(),
-        ])),
+        ]),
         ['client', 'nostube'],
       ];
 
@@ -154,14 +156,14 @@ export function usePlaylists() {
   const deletePlaylist = async (identifier: string) => {
     if (!user?.pubkey) throw new Error('User not logged in');
 
-    await publishEvent({event: {
-      kind: PLAYLIST_KIND,
-      created_at: nowInSecs(),
-      tags: [
-        ['d', identifier],
-      ],
-      content: '',
-    }});
+    await publishEvent({
+      event: {
+        kind: PLAYLIST_KIND,
+        created_at: nowInSecs(),
+        tags: [['d', identifier]],
+        content: '',
+      },
+    });
 
     queryClient.invalidateQueries({ queryKey: ['playlists', user?.pubkey] });
   };

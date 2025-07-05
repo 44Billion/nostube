@@ -1,10 +1,10 @@
-import { useMemo } from "react";
-import { type NostrEvent } from "@nostrify/nostrify";
-import { Link } from "react-router-dom";
-import { nip19 } from "nostr-tools";
-import { useAuthor } from "@/hooks/useAuthor";
-import { genUserName } from "@/lib/genUserName";
-import { cn } from "@/lib/utils";
+import { useMemo } from 'react';
+import { type NostrEvent } from '@nostrify/nostrify';
+import { Link } from 'react-router-dom';
+import { nip19 } from 'nostr-tools';
+import { useAuthor } from '@/hooks/useAuthor';
+import { genUserName } from '@/lib/genUserName';
+import { cn } from '@/lib/utils';
 
 interface NoteContentProps {
   event: NostrEvent;
@@ -54,19 +54,13 @@ export function NoteContent({ event, className }: NoteContentProps) {
           const nostrId = `${nostrPrefix}${nostrData}`;
           const decoded = nip19.decode(nostrId);
 
-          if (decoded.type === "npub") {
+          if (decoded.type === 'npub') {
             const pubkey = decoded.data;
-            parts.push(
-              <NostrMention key={`mention-${keyCounter++}`} pubkey={pubkey} />
-            );
+            parts.push(<NostrMention key={`mention-${keyCounter++}`} pubkey={pubkey} />);
           } else {
             // For other types, just show as a link
             parts.push(
-              <Link
-                key={`nostr-${keyCounter++}`}
-                to={`/${nostrId}`}
-                className="text-blue-500 hover:underline"
-              >
+              <Link key={`nostr-${keyCounter++}`} to={`/${nostrId}`} className="text-blue-500 hover:underline">
                 {fullMatch}
               </Link>
             );
@@ -79,11 +73,7 @@ export function NoteContent({ event, className }: NoteContentProps) {
         // Handle hashtags
         const tag = hashtag.slice(1); // Remove the #
         parts.push(
-          <Link
-            key={`hashtag-${keyCounter++}`}
-            to={`/t/${tag}`}
-            className="text-blue-500 hover:underline"
-          >
+          <Link key={`hashtag-${keyCounter++}`} to={`/t/${tag}`} className="text-blue-500 hover:underline">
             {hashtag}
           </Link>
         );
@@ -106,7 +96,7 @@ export function NoteContent({ event, className }: NoteContentProps) {
   }, [event]);
 
   return (
-    <div className={cn("whitespace-pre-wrap break-words", className)}>
+    <div className={cn('whitespace-pre-wrap break-words', className)}>
       {content.length > 0 ? content : event.content}
     </div>
   );
@@ -117,18 +107,12 @@ function NostrMention({ pubkey }: { pubkey: string }) {
   const author = useAuthor(pubkey);
   const npub = nip19.npubEncode(pubkey);
   const hasRealName = !!author.data?.metadata?.name;
-  const displayName =
-    author.data?.metadata?.display_name ||
-    author.data?.metadata?.name ||
-    genUserName(pubkey);
+  const displayName = author.data?.metadata?.display_name || author.data?.metadata?.name || genUserName(pubkey);
 
   return (
     <Link
       to={`/${npub}`}
-      className={cn(
-        "font-medium hover:underline",
-        hasRealName ? "text-blue-500" : "text-gray-500 hover:text-gray-700"
-      )}
+      className={cn('font-medium hover:underline', hasRealName ? 'text-blue-500' : 'text-gray-500 hover:text-gray-700')}
     >
       @{displayName}
     </Link>

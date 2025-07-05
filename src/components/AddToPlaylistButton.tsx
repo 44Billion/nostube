@@ -9,13 +9,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandItem,
-  CommandList,
-} from '@/components/ui/command';
+import { Command, CommandEmpty, CommandGroup, CommandItem, CommandList } from '@/components/ui/command';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { usePlaylists } from '@/hooks/usePlaylist';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -43,7 +37,7 @@ export function AddToPlaylistButton({ videoId, videoTitle, videoKind }: AddToPla
   const handleAddToPlaylist = async (playlistId: string, playlistName: string) => {
     try {
       setIsAdding(true);
-      await addVideo(playlistId, videoId, videoKind, videoTitle );
+      await addVideo(playlistId, videoId, videoKind, videoTitle);
       toast({
         title: 'Video added to playlist',
         description: `Successfully added to "${playlistName}"`,
@@ -70,20 +64,14 @@ export function AddToPlaylistButton({ videoId, videoTitle, videoKind }: AddToPla
           onClick={() => handleAddToPlaylist(playlists[0].identifier, playlists[0].name)}
           disabled={isAdding}
         >
-          {isAdding ? (
-            <Skeleton className="mr-2 h-4 w-4" />
-          ) : (
-            <Plus className="mr-2 h-4 w-4" />
-          )}
+          {isAdding ? <Skeleton className="mr-2 h-4 w-4" /> : <Plus className="mr-2 h-4 w-4" />}
           {isAdding ? 'Adding...' : 'Add to Playlist'}
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Add to Playlist</DialogTitle>
-          <DialogDescription>
-            Choose a playlist to add this video to.
-          </DialogDescription>
+          <DialogDescription>Choose a playlist to add this video to.</DialogDescription>
         </DialogHeader>
         <Command>
           <CommandList>
@@ -91,7 +79,7 @@ export function AddToPlaylistButton({ videoId, videoTitle, videoKind }: AddToPla
               <CommandEmpty>No playlists found. Create one first!</CommandEmpty>
             ) : (
               <CommandGroup>
-                {playlists.map((playlist) => {
+                {playlists.map(playlist => {
                   const hasVideo = playlist.videos.some(v => v.id === videoId);
                   return (
                     <CommandItem

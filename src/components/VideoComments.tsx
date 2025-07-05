@@ -1,15 +1,15 @@
-import { useNostr } from "@nostrify/react";
-import { useQuery } from "@tanstack/react-query";
-import { useCurrentUser } from "@/hooks/useCurrentUser";
-import { useNostrPublish } from "@/hooks/useNostrPublish";
-import { useAuthor } from "@/hooks/useAuthor";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { useState } from "react";
-import { formatDistance } from "date-fns";
-import { useAppContext } from "@/hooks/useAppContext";
-import { NostrEvent } from "nostr-tools";
+import { useNostr } from '@nostrify/react';
+import { useQuery } from '@tanstack/react-query';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
+import { useNostrPublish } from '@/hooks/useNostrPublish';
+import { useAuthor } from '@/hooks/useAuthor';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { useState } from 'react';
+import { formatDistance } from 'date-fns';
+import { useAppContext } from '@/hooks/useAppContext';
+import { NostrEvent } from 'nostr-tools';
 
 interface Comment {
   id: string;
@@ -59,33 +59,31 @@ function CommentItem({ comment }: { comment: Comment }) {
 }
 
 export function VideoComments({ videoId, authorPubkey }: VideoCommentsProps) {
-  const [newComment, setNewComment] = useState("");
+  const [newComment, setNewComment] = useState('');
   const { nostr } = useNostr();
   const { user } = useCurrentUser();
   const { mutate: publish } = useNostrPublish();
   const { config } = useAppContext();
 
   const { data: comments = [] } = useQuery<Comment[]>({
-    queryKey: ["video-comments", videoId],
+    queryKey: ['video-comments', videoId],
     queryFn: async ({ signal }) => {
       const events = await nostr.query(
         [
           {
             kinds: [1],
-            "#e": [videoId],
+            '#e': [videoId],
             limit: 100,
           },
           {
             kinds: [1111],
-            "#E": [videoId],
+            '#E': [videoId],
             limit: 100,
           },
         ],
         { signal, relays: config.relays }
       );
-      return events
-        .sort((a, b) => b.created_at - a.created_at)
-        .map(mapEventToComment);
+      return events.sort((a, b) => b.created_at - a.created_at).map(mapEventToComment);
     },
   });
 
@@ -97,16 +95,16 @@ export function VideoComments({ videoId, authorPubkey }: VideoCommentsProps) {
       kind: 1111,
       content: newComment,
       tags: [
-        ["E", videoId],
-        ["P", authorPubkey],
-        ["e", videoId],
-        ["p", authorPubkey],
-        ["client", "nostube"],
+        ['E', videoId],
+        ['P', authorPubkey],
+        ['e', videoId],
+        ['p', authorPubkey],
+        ['client', 'nostube'],
       ],
     };
     publish(draftEvent);
 
-    setNewComment("");
+    setNewComment('');
   };
 
   return (
@@ -116,7 +114,7 @@ export function VideoComments({ videoId, authorPubkey }: VideoCommentsProps) {
         <form onSubmit={handleSubmit} className="mb-8">
           <Textarea
             value={newComment}
-            onChange={(e) => setNewComment(e.target.value)}
+            onChange={e => setNewComment(e.target.value)}
             placeholder="Add a comment..."
             className="mb-2"
           />
@@ -127,7 +125,7 @@ export function VideoComments({ videoId, authorPubkey }: VideoCommentsProps) {
       )}
 
       <div>
-        {comments.map((comment) => (
+        {comments.map(comment => (
           <CommentItem key={comment.id} comment={comment} />
         ))}
       </div>

@@ -1,36 +1,32 @@
-import { useParams, Link } from "react-router-dom";
-import { useNostr } from "@nostrify/react";
-import { useQuery } from "@tanstack/react-query";
-import { useAuthor } from "@/hooks/useAuthor";
-import { VideoPlayer } from "@/components/VideoPlayer";
-import { VideoComments } from "@/components/VideoComments";
-import { VideoSuggestions } from "@/components/VideoSuggestions";
-import { ButtonWithReactions } from "@/components/ButtonWithReactions";
-import { FollowButton } from "@/components/FollowButton";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
-import { formatDistance } from "date-fns";
-import { Separator } from "@/components/ui/separator";
-import { useEffect, useState, useMemo, useRef } from "react";
-import { processEvent, VideoEvent } from "@/utils/video-event";
-import { nip19 } from "nostr-tools";
-import { EventPointer } from "nostr-tools/nip19";
-import { Skeleton } from "@/components/ui/skeleton";
-import { CollapsibleText } from "@/components/ui/collapsible-text";
-import { AddToPlaylistButton } from "@/components/AddToPlaylistButton";
-import { useAppContext } from "@/hooks/useAppContext";
-import { mergeRelays } from "@/lib/utils";
-import { useCurrentUser } from "@/hooks/useCurrentUser";
-import type { NUser } from "@nostrify/react/login";
-import { useVideoCache } from "@/contexts/VideoCacheContext";
-import ShareButton from "@/components/ShareButton";
+import { useParams, Link } from 'react-router-dom';
+import { useNostr } from '@nostrify/react';
+import { useQuery } from '@tanstack/react-query';
+import { useAuthor } from '@/hooks/useAuthor';
+import { VideoPlayer } from '@/components/VideoPlayer';
+import { VideoComments } from '@/components/VideoComments';
+import { VideoSuggestions } from '@/components/VideoSuggestions';
+import { ButtonWithReactions } from '@/components/ButtonWithReactions';
+import { FollowButton } from '@/components/FollowButton';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
+import { formatDistance } from 'date-fns';
+import { Separator } from '@/components/ui/separator';
+import { useEffect, useState, useMemo, useRef } from 'react';
+import { processEvent, VideoEvent } from '@/utils/video-event';
+import { nip19 } from 'nostr-tools';
+import { EventPointer } from 'nostr-tools/nip19';
+import { Skeleton } from '@/components/ui/skeleton';
+import { CollapsibleText } from '@/components/ui/collapsible-text';
+import { AddToPlaylistButton } from '@/components/AddToPlaylistButton';
+import { useAppContext } from '@/hooks/useAppContext';
+import { mergeRelays } from '@/lib/utils';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
+import type { NUser } from '@nostrify/react/login';
+import { useVideoCache } from '@/contexts/VideoCacheContext';
+import ShareButton from '@/components/ShareButton';
 
 // Custom hook for debounced play position storage
-function useDebouncedPlayPositionStorage(
-  playPos: number,
-  user: NUser | undefined,
-  videoId: string | undefined
-) {
+function useDebouncedPlayPositionStorage(playPos: number, user: NUser | undefined, videoId: string | undefined) {
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastWriteRef = useRef<number>(0);
   useEffect(() => {
@@ -71,19 +67,18 @@ export function VideoPage() {
   const { nostr } = useNostr();
   const { videos } = useVideoCache();
 
-  const { id, relays, author, kind } = nip19.decode(nevent ?? "")
-    .data as EventPointer;
+  const { id, relays, author, kind } = nip19.decode(nevent ?? '').data as EventPointer;
 
   // TODO also use the authors outbox relays
   const fullRelays = mergeRelays([relays || [], config.relays]);
 
   const { data: video, isLoading } = useQuery<VideoEvent | null>({
-    queryKey: ["video", nevent],
+    queryKey: ['video', nevent],
     queryFn: async ({ signal }) => {
       if (!nevent) return null;
 
       // First try to get the video from the cache
-      const found = videos.find((v) => v.id === id);
+      const found = videos.find(v => v.id === id);
       if (found) {
         return found;
       }
@@ -111,13 +106,9 @@ export function VideoPage() {
     },
   });
 
-  const authorMeta = useAuthor(video?.pubkey || "");
+  const authorMeta = useAuthor(video?.pubkey || '');
   const metadata = authorMeta.data?.metadata;
-  const authorName =
-    metadata?.display_name ||
-    metadata?.name ||
-    video?.pubkey?.slice(0, 8) ||
-    "";
+  const authorName = metadata?.display_name || metadata?.name || video?.pubkey?.slice(0, 8) || '';
 
   useEffect(() => {
     console.log(video);
@@ -126,7 +117,7 @@ export function VideoPage() {
   // Scroll to top when video is loaded
   useEffect(() => {
     if (video) {
-      window.scrollTo({ top: 0, behavior: "instant" });
+      window.scrollTo({ top: 0, behavior: 'instant' });
     }
   }, [video]);
 
@@ -137,9 +128,9 @@ export function VideoPage() {
   // Compute initial play position from ?t=... param or localStorage
   const { user } = useCurrentUser();
   const initialPlayPos = useMemo(() => {
-    if (typeof window !== "undefined") {
+    if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
-      const t = parseInt(params.get("t") || "", 10);
+      const t = parseInt(params.get('t') || '', 10);
       if (!isNaN(t)) return t;
     }
     if (user && video) {
@@ -170,13 +161,13 @@ export function VideoPage() {
   }
 
   // Build share URL
-  const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
-  const videoUrl = `${baseUrl}/video/${nevent || ""}`;
+  const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
+  const videoUrl = `${baseUrl}/video/${nevent || ''}`;
   const timestamp = includeTimestamp ? getCurrentTime() : 0;
   const shareUrl = timestamp > 0 ? `${videoUrl}?t=${timestamp}` : videoUrl;
   const fullUrl = shareUrl;
-  const title = video?.title || "Watch this video";
-  const thumbnailUrl = video?.thumb || "";
+  const title = video?.title || 'Watch this video';
+  const thumbnailUrl = video?.thumb || '';
 
   const shareLinks = useMemo(() => {
     const eUrl = encode(shareUrl);
@@ -235,24 +226,19 @@ export function VideoPage() {
           ) : (
             <div>
               <VideoPlayer
-                url={video?.url || ""}
-                mime={video?.mimeType || ""}
-                poster={video?.thumb || ""}
+                url={video?.url || ''}
+                mime={video?.mimeType || ''}
+                poster={video?.thumb || ''}
                 loop={[34236, 22].includes(video?.kind || 0)}
                 className="w-full max-h-[80dvh] aspect-video rounded-lg"
                 onTimeUpdate={setCurrentPlayPos}
                 initialPlayPos={initialPlayPos}
               />
               <div className="flex flex-col gap-4 p-4">
-                {video?.title && (
-                  <h1 className="text-2xl font-bold">{video?.title}</h1>
-                )}
+                {video?.title && <h1 className="text-2xl font-bold">{video?.title}</h1>}
 
                 <div className="flex items-start justify-between">
-                  <Link
-                    to={`/author/${nip19.npubEncode(video?.pubkey || "")}`}
-                    className="flex items-center gap-4"
-                  >
+                  <Link to={`/author/${nip19.npubEncode(video?.pubkey || '')}`} className="flex items-center gap-4">
                     <Avatar>
                       <AvatarImage src={metadata?.picture} />
                       <AvatarFallback>{authorName[0]}</AvatarFallback>
@@ -261,26 +247,15 @@ export function VideoPage() {
                       <div className="font-semibold">{authorName}</div>
                       <div className="text-sm text-muted-foreground">
                         {video?.created_at &&
-                          formatDistance(
-                            new Date(video.created_at * 1000),
-                            new Date(),
-                            { addSuffix: true }
-                          )}
+                          formatDistance(new Date(video.created_at * 1000), new Date(), { addSuffix: true })}
                       </div>
                     </div>
                   </Link>
 
                   {video && (
                     <div className="flex items-center gap-2">
-                      <AddToPlaylistButton
-                        videoId={video.id}
-                        videoKind={video.kind}
-                        videoTitle={video.title}
-                      />
-                      <ButtonWithReactions
-                        eventId={video.id}
-                        authorPubkey={video.pubkey}
-                      />
+                      <AddToPlaylistButton videoId={video.id} videoKind={video.kind} videoTitle={video.title} />
+                      <ButtonWithReactions eventId={video.id} authorPubkey={video.pubkey} />
                       <FollowButton pubkey={video.pubkey} />
                       <ShareButton
                         shareOpen={shareOpen}
@@ -308,7 +283,7 @@ export function VideoPage() {
 
                 {video && video.tags.length > 0 && (
                   <div className="flex flex-wrap gap-2">
-                    {video.tags.slice(20).map((tag) => (
+                    {video.tags.slice(20).map(tag => (
                       <Badge key={tag} variant="secondary">
                         {tag}
                       </Badge>
@@ -316,12 +291,7 @@ export function VideoPage() {
                   </div>
                 )}
 
-                {video?.description && (
-                  <CollapsibleText
-                    text={video.description}
-                    className="text-muted-foreground"
-                  />
-                )}
+                {video?.description && <CollapsibleText text={video.description} className="text-muted-foreground" />}
               </div>
             </div>
           )}

@@ -1,38 +1,29 @@
-import { useState, useEffect, useMemo } from "react";
-import { useCurrentUser } from "@/hooks/useCurrentUser";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent, CardFooter } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
-import {
-  X,
-  Loader2,
-  Trash,
-  Check,
-  ExternalLink,
-} from "lucide-react";
-import { useAppContext } from "@/hooks/useAppContext";
-import {
-  mirrorBlobsToServers,
-  uploadFileToMultipleServers,
-} from "@/lib/blossom-upload";
-import { useDropzone } from "react-dropzone";
-import { BlobDescriptor } from "blossom-client-sdk";
-import { useNavigate } from "react-router-dom";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { useNostrPublish } from "@/hooks/useNostrPublish";
-import * as MP4Box from "mp4box";
-import type { Movie } from "mp4box";
-import { nip19 } from "nostr-tools";
-import { nowInSecs } from "@/lib/utils";
+import { useState, useEffect, useMemo } from 'react';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Card, CardContent, CardFooter } from '@/components/ui/card';
+import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
+import { X, Loader2, Trash, Check, ExternalLink } from 'lucide-react';
+import { useAppContext } from '@/hooks/useAppContext';
+import { mirrorBlobsToServers, uploadFileToMultipleServers } from '@/lib/blossom-upload';
+import { useDropzone } from 'react-dropzone';
+import { BlobDescriptor } from 'blossom-client-sdk';
+import { useNavigate } from 'react-router-dom';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { useNostrPublish } from '@/hooks/useNostrPublish';
+import * as MP4Box from 'mp4box';
+import type { Movie } from 'mp4box';
+import { nip19 } from 'nostr-tools';
+import { nowInSecs } from '@/lib/utils';
 
 export function VideoUpload() {
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
   const [tags, setTags] = useState<string[]>([]);
-  const [tagInput, setTagInput] = useState("");
+  const [tagInput, setTagInput] = useState('');
   const [file, setFile] = useState<File | null>(null);
   const [thumbnail, setThumbnail] = useState<File | null>(null);
   const [uploadInfo, setUploadInfo] = useState<{
@@ -46,19 +37,13 @@ export function VideoUpload() {
   }>({ uploadedBlobs: [], mirroredBlobs: [] });
   const [uploadStarted, setUploadStarted] = useState(false);
   const [thumbnailBlob, setThumbnailBlob] = useState<Blob | null>(null);
-  const [thumbnailSource, setThumbnailSource] = useState<
-    "generated" | "upload"
-  >("generated");
+  const [thumbnailSource, setThumbnailSource] = useState<'generated' | 'upload'>('generated');
 
   const { user } = useCurrentUser();
   const { config } = useAppContext();
   const { mutate: publish } = useNostrPublish();
-  const blossomInitalUploadServers = config.blossomServers?.filter((server) =>
-    server.tags.includes("initial upload")
-  );
-  const blossomMirrorServers = config.blossomServers?.filter((server) =>
-    server.tags.includes("mirror")
-  );
+  const blossomInitalUploadServers = config.blossomServers?.filter(server => server.tags.includes('initial upload'));
+  const blossomMirrorServers = config.blossomServers?.filter(server => server.tags.includes('mirror'));
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -67,11 +52,11 @@ export function VideoUpload() {
 
     // Determine which thumbnail to use
     let thumbnailFile: File | null = null;
-    if (thumbnailSource === "generated") {
+    if (thumbnailSource === 'generated') {
       if (!thumbnailBlob) return;
       // Convert Blob to File for upload
-      thumbnailFile = new File([thumbnailBlob], "thumbnail.jpg", {
-        type: thumbnailBlob.type || "image/jpeg",
+      thumbnailFile = new File([thumbnailBlob], 'thumbnail.jpg', {
+        type: thumbnailBlob.type || 'image/jpeg',
         lastModified: Date.now(),
       });
     } else {
@@ -79,25 +64,22 @@ export function VideoUpload() {
       thumbnailFile = thumbnail;
     }
 
-    if (!file || !(file instanceof File))
-      throw new Error("No valid video file selected");
-    if (!thumbnailFile) throw new Error("No valid thumbnail file selected");
+    if (!file || !(file instanceof File)) throw new Error('No valid video file selected');
+    if (!thumbnailFile) throw new Error('No valid thumbnail file selected');
 
     try {
-      const [width, height] = uploadInfo.dimension?.split("x").map(Number) || [
-        0, 0,
-      ];
+      const [width, height] = uploadInfo.dimension?.split('x').map(Number) || [0, 0];
       const kind = height > width ? 22 : 21;
 
       const thumbnailBlobs = await uploadFileToMultipleServers({
         file: thumbnailFile,
-        servers: blossomInitalUploadServers.map((server) => server.url),
-        signer: async (draft) => await user.signer.signEvent(draft),
+        servers: blossomInitalUploadServers.map(server => server.url),
+        signer: async draft => await user.signer.signEvent(draft),
       });
 
       // Publish Nostr event (NIP-71)
       const imetaTag = [
-        "imeta",
+        'imeta',
         `dim ${uploadInfo.dimension}`,
         `url ${uploadInfo.uploadedBlobs?.[0].url}`,
         `m ${file.type}`,
@@ -120,53 +102,56 @@ export function VideoUpload() {
         content: description,
         created_at: nowInSecs(),
         tags: [
-          ["title", title],
-          ["published_at", nowInSecs().toString()],
-          ["duration", uploadInfo.duration?.toString() || "0"],
+          ['title', title],
+          ['published_at', nowInSecs().toString()],
+          ['duration', uploadInfo.duration?.toString() || '0'],
           imetaTag,
-          ...tags.map((tag) => ["t", tag]),
-          ["client", "nostube"],
+          ...tags.map(tag => ['t', tag]),
+          ['client', 'nostube'],
         ],
       };
 
-      publish({event, relays: ['wss://haven.slidestr.net']}, {
-        onSuccess: (publishedEvent, vars) => {
-          navigate(
-            `/video/${nip19.neventEncode({
-              kind: publishedEvent.kind,
-              id: publishedEvent.id,
-              author: publishedEvent.pubkey,
-              relays: vars.relays
-            })}`
-          );
-        },
-      });
+      publish(
+        { event, relays: ['wss://haven.slidestr.net'] },
+        {
+          onSuccess: (publishedEvent, vars) => {
+            navigate(
+              `/video/${nip19.neventEncode({
+                kind: publishedEvent.kind,
+                id: publishedEvent.id,
+                author: publishedEvent.pubkey,
+                relays: vars.relays,
+              })}`
+            );
+          },
+        }
+      );
       console.log(event);
 
       // Reset form
-      setTitle("");
-      setDescription("");
+      setTitle('');
+      setDescription('');
       setFile(null);
       setThumbnail(null);
       setTags([]);
-      setTagInput("");
+      setTagInput('');
     } catch (error) {
-      console.error("Upload failed:", error);
+      console.error('Upload failed:', error);
     }
   };
 
   const handleAddTag = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && tagInput.trim()) {
+    if (e.key === 'Enter' && tagInput.trim()) {
       e.preventDefault();
       if (!tags.includes(tagInput.trim())) {
         setTags([...tags, tagInput.trim()]);
       }
-      setTagInput("");
+      setTagInput('');
     }
   };
 
   const removeTag = (tagToRemove: string) => {
-    setTags(tags.filter((tag) => tag !== tagToRemove));
+    setTags(tags.filter(tag => tag !== tagToRemove));
   };
 
   const handleThumbnailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -174,8 +159,8 @@ export function VideoUpload() {
   };
 
   const handleThumbnailSourceChange = (value: string) => {
-    setThumbnailSource(value as "generated" | "upload");
-    if (value === "generated") {
+    setThumbnailSource(value as 'generated' | 'upload');
+    if (value === 'generated') {
       setThumbnail(null); // clear uploaded file if switching to generated
     }
   };
@@ -197,13 +182,13 @@ export function VideoUpload() {
       try {
         const uploadedBlobs = await uploadFileToMultipleServers({
           file: acceptedFiles[0],
-          servers: blossomInitalUploadServers.map((server) => server.url),
-          signer: async (draft) => await user.signer.signEvent(draft),
+          servers: blossomInitalUploadServers.map(server => server.url),
+          signer: async draft => await user.signer.signEvent(draft),
         });
         // Calculate video duration and dimensions
-        const video = document.createElement("video");
+        const video = document.createElement('video');
         video.src = URL.createObjectURL(acceptedFiles[0]);
-        await new Promise((resolve) => {
+        await new Promise(resolve => {
           video.onloadedmetadata = resolve;
         });
         const duration = Math.round(video.duration);
@@ -211,9 +196,7 @@ export function VideoUpload() {
         const sizeMB = acceptedFiles[0].size / 1024 / 1024;
 
         // --- MP4Box.js: Extract codec info ---
-        function getCodecsFromFile(
-          file: File
-        ): Promise<{ videoCodec?: string; audioCodec?: string }> {
+        function getCodecsFromFile(file: File): Promise<{ videoCodec?: string; audioCodec?: string }> {
           return new Promise((resolve, reject) => {
             const mp4boxfile = MP4Box.createFile();
             let videoCodec: string | undefined;
@@ -221,10 +204,8 @@ export function VideoUpload() {
             mp4boxfile.onError = (err: unknown) => reject(err);
             mp4boxfile.onReady = (info: Movie) => {
               for (const track of info.tracks) {
-                if (track.type && track.type === "video" && track.codec)
-                  videoCodec = track.codec;
-                if (track.type && track.type === "audio" && track.codec)
-                  audioCodec = track.codec;
+                if (track.type && track.type === 'video' && track.codec) videoCodec = track.codec;
+                if (track.type && track.type === 'audio' && track.codec) audioCodec = track.codec;
               }
               resolve({ videoCodec, audioCodec });
             };
@@ -259,11 +240,11 @@ export function VideoUpload() {
 
         if (blossomMirrorServers && blossomMirrorServers.length > 0) {
           const mirroredBlobs = await mirrorBlobsToServers({
-            mirrorServers: blossomMirrorServers.map((s) => s.url),
+            mirrorServers: blossomMirrorServers.map(s => s.url),
             blob: uploadedBlobs[0], // TODO which blob to mirror?
-            signer: async (draft) => await user.signer.signEvent(draft),
+            signer: async draft => await user.signer.signEvent(draft),
           });
-          setUploadInfo((ui) => ({
+          setUploadInfo(ui => ({
             ...ui,
             mirroredBlobs,
           }));
@@ -276,10 +257,10 @@ export function VideoUpload() {
     }
     setUploadStarted(false);
   };
-  
+
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
-    accept: { "video/*": [] },
+    accept: { 'video/*': [] },
     multiple: false,
   });
 
@@ -292,20 +273,17 @@ export function VideoUpload() {
 
   // Generate thumbnail from video after upload using a headless video element
   useEffect(() => {
-    async function createThumbnailFromUrl(
-      videoUrl: string,
-      seekTime = 1
-    ): Promise<Blob | null> {
+    async function createThumbnailFromUrl(videoUrl: string, seekTime = 1): Promise<Blob | null> {
       return new Promise<Blob | null>((resolve, reject) => {
-        const video = document.createElement("video");
+        const video = document.createElement('video');
         video.src = videoUrl;
-        video.crossOrigin = "anonymous";
+        video.crossOrigin = 'anonymous';
         video.muted = true;
         video.playsInline = true;
-        video.preload = "auto";
+        video.preload = 'auto';
 
         video.addEventListener(
-          "loadedmetadata",
+          'loadedmetadata',
           () => {
             // Clamp seekTime to video duration
             const time = Math.min(seekTime, video.duration - 0.1);
@@ -315,22 +293,22 @@ export function VideoUpload() {
         );
 
         video.addEventListener(
-          "seeked",
+          'seeked',
           () => {
-            const canvas = document.createElement("canvas");
+            const canvas = document.createElement('canvas');
             canvas.width = video.videoWidth;
             canvas.height = video.videoHeight;
-            const ctx = canvas.getContext("2d");
+            const ctx = canvas.getContext('2d');
             ctx?.drawImage(video, 0, 0, canvas.width, canvas.height);
-            canvas.toBlob((blob) => resolve(blob), "image/jpeg", 0.8);
+            canvas.toBlob(blob => resolve(blob), 'image/jpeg', 0.8);
           },
           { once: true }
         );
 
         video.addEventListener(
-          "error",
+          'error',
           () => {
-            reject(new Error("Failed to load video for thumbnail"));
+            reject(new Error('Failed to load video for thumbnail'));
           },
           { once: true }
         );
@@ -340,7 +318,7 @@ export function VideoUpload() {
     if (uploadedVideoUrl) {
       setThumbnailBlob(null); // reset before generating new
       createThumbnailFromUrl(uploadedVideoUrl, 1)
-        .then((blob) => {
+        .then(blob => {
           if (blob) {
             setThumbnailBlob(blob);
           }
@@ -371,16 +349,16 @@ export function VideoUpload() {
 
   // Reset all form fields and state
   const handleReset = () => {
-    setTitle("");
-    setDescription("");
+    setTitle('');
+    setDescription('');
     setTags([]);
-    setTagInput("");
+    setTagInput('');
     setFile(null);
     setThumbnail(null);
     setUploadInfo({ uploadedBlobs: [], mirroredBlobs: [] });
     setUploadStarted(false);
     setThumbnailBlob(null);
-    setThumbnailSource("generated");
+    setThumbnailSource('generated');
   };
 
   if (!user) {
@@ -388,10 +366,7 @@ export function VideoUpload() {
   }
 
   const formatBlobUrl = (url: string) => {
-    return url
-      .replace("https://", "")
-      .replace("http://", "")
-      .replace(/\/.*$/, "");
+    return url.replace('https://', '').replace('http://', '').replace(/\/.*$/, '');
   };
 
   return (
@@ -399,20 +374,12 @@ export function VideoUpload() {
       {/* Info bar above drop zone */}
       <div className="flex items-center justify-between bg-muted border border-muted-foreground/10 rounded px-4 py-2 mb-4">
         <div className="text-sm text-muted-foreground">
-          Uploading directly to{" "}
-          <b className="text-foreground">
-            {blossomInitalUploadServers?.length ?? 0}
-          </b>{" "}
-          server{(blossomInitalUploadServers?.length ?? 0) === 1 ? "" : "s"}.
-          Mirroring to{" "}
-          <b className="text-foreground">{blossomMirrorServers?.length ?? 0}</b>{" "}
-          server{(blossomMirrorServers?.length ?? 0) === 1 ? "" : "s"}.
+          Uploading directly to <b className="text-foreground">{blossomInitalUploadServers?.length ?? 0}</b> server
+          {(blossomInitalUploadServers?.length ?? 0) === 1 ? '' : 's'}. Mirroring to{' '}
+          <b className="text-foreground">{blossomMirrorServers?.length ?? 0}</b> server
+          {(blossomMirrorServers?.length ?? 0) === 1 ? '' : 's'}.
         </div>
-        <Button
-          onClick={() => navigate("/settings")}
-          variant={"outline"}
-          className=" cursor-pointer"
-        >
+        <Button onClick={() => navigate('/settings')} variant={'outline'} className=" cursor-pointer">
           Configure servers
         </Button>
       </div>
@@ -450,46 +417,36 @@ export function VideoUpload() {
                     </div>
                     <div className="text-muted-foreground">Duration:</div>
                     <div>
-                      <span className="font-mono">
-                        {uploadInfo.duration} seconds
-                      </span>
+                      <span className="font-mono">{uploadInfo.duration} seconds</span>
                     </div>
                     {uploadInfo.videoCodec && (
                       <>
-                        <div className="text-muted-foreground">
-                          Video Codec:
-                        </div>
+                        <div className="text-muted-foreground">Video Codec:</div>
                         <div>
-                          <span className="font-mono">
-                            {uploadInfo.videoCodec}
-                          </span>
+                          <span className="font-mono">{uploadInfo.videoCodec}</span>
                         </div>
-                        {uploadInfo.videoCodec.startsWith("av01") && (
+                        {uploadInfo.videoCodec.startsWith('av01') && (
                           <div className="col-span-2 mt-2 text-sm text-yellow-700 bg-yellow-100 border border-yellow-300 rounded p-2">
-                            <b>Warning:</b> AV1 videos (<code>av01</code>)
-                            cannot be played on iOS or Safari browsers. Please
-                            use H.264/AVC for maximum compatibility.
+                            <b>Warning:</b> AV1 videos (<code>av01</code>) cannot be played on iOS or Safari browsers.
+                            Please use H.264/AVC for maximum compatibility.
                           </div>
                         )}
-                        {uploadInfo.videoCodec.startsWith("vp09") && (
+                        {uploadInfo.videoCodec.startsWith('vp09') && (
                           <div className="col-span-2 mt-2 text-sm text-yellow-700 bg-yellow-100 border border-yellow-300 rounded p-2">
-                            <b>Warning:</b> VP9 videos (<code>vp09</code>) are
-                            not supported on iOS or Safari browsers. For maximum
-                            compatibility, use H.264/AVC.
+                            <b>Warning:</b> VP9 videos (<code>vp09</code>) are not supported on iOS or Safari browsers.
+                            For maximum compatibility, use H.264/AVC.
                           </div>
                         )}
-                        {uploadInfo.videoCodec.startsWith("hvc1") && (
+                        {uploadInfo.videoCodec.startsWith('hvc1') && (
                           <div className="col-span-2 mt-2 text-sm text-blue-800 bg-blue-100 border border-blue-300 rounded p-2">
-                            <b>Info:</b> H.265/HEVC (<code>hvc1</code>) is
-                            widely supported. Only some de-googled Linux
+                            <b>Info:</b> H.265/HEVC (<code>hvc1</code>) is widely supported. Only some de-googled Linux
                             browsers may have issues.
                           </div>
                         )}
-                        {uploadInfo.videoCodec.startsWith("avc1") && (
+                        {uploadInfo.videoCodec.startsWith('avc1') && (
                           <div className="col-span-2 mt-2 text-sm text-green-800 bg-green-100 border border-green-300 rounded p-2">
-                            <b>Great:</b> H.264/AVC (<code>avc1</code>) is the
-                            most widely supported video codec and will play on
-                            all browsers and devices.
+                            <b>Great:</b> H.264/AVC (<code>avc1</code>) is the most widely supported video codec and
+                            will play on all browsers and devices.
                           </div>
                         )}
                       </>
@@ -505,37 +462,27 @@ export function VideoUpload() {
                 </div>
               </div>
             </div>
-          ) : blossomInitalUploadServers &&
-            blossomInitalUploadServers.length > 0 ? (
+          ) : blossomInitalUploadServers && blossomInitalUploadServers.length > 0 ? (
             <div
               className="mb-4"
               style={{
-                display:
-                  uploadInfo.uploadedBlobs &&
-                  uploadInfo.uploadedBlobs.length > 0
-                    ? "none"
-                    : undefined,
+                display: uploadInfo.uploadedBlobs && uploadInfo.uploadedBlobs.length > 0 ? 'none' : undefined,
               }}
             >
               <div
                 {...getRootProps()}
                 className={
                   `flex flex-col items-center h-32 justify-center border-2 border-dashed rounded-lg p-6 cursor-pointer transition-colors ` +
-                  (isDragActive
-                    ? "border-primary bg-muted"
-                    : "border-gray-300 bg-background hover:bg-muted")
+                  (isDragActive ? 'border-primary bg-muted' : 'border-gray-300 bg-background hover:bg-muted')
                 }
               >
                 <input {...getInputProps()} />
                 <span className="text-base text-muted-foreground">
-                  {isDragActive
-                    ? "Drop the video here..."
-                    : "Drag & drop a video file here, or click to select"}
+                  {isDragActive ? 'Drop the video here...' : 'Drag & drop a video file here, or click to select'}
                 </span>
                 {file && (
                   <div className="mt-2 text-sm text-foreground">
-                    <b>Selected:</b> {file.name} (
-                    {(file.size / 1024 / 1024).toFixed(2)} MB)
+                    <b>Selected:</b> {file.name} ({(file.size / 1024 / 1024).toFixed(2)} MB)
                   </div>
                 )}
               </div>
@@ -543,32 +490,27 @@ export function VideoUpload() {
           ) : (
             <div className="text-sm text-muted-foreground bg-yellow-50 border border-yellow-200 rounded p-3 mb-2">
               <span>
-                You do not have any Blossom server tagged with{" "}
-                <b>"initial upload"</b>.<br />
-                Please go to{" "}
+                You do not have any Blossom server tagged with <b>"initial upload"</b>.<br />
+                Please go to{' '}
                 <a href="/settings" className="underline text-blue-600">
                   Settings
-                </a>{" "}
-                and assign the <b>"initial upload"</b> tag to at least one
-                server.
+                </a>{' '}
+                and assign the <b>"initial upload"</b> tag to at least one server.
               </span>
             </div>
           )}
 
           {/* Uploading to... server list */}
           <div className="flex flex-col">
-            {!blossomInitalUploadServers ||
-            blossomInitalUploadServers.length === 0 ? (
+            {!blossomInitalUploadServers || blossomInitalUploadServers.length === 0 ? (
               <div className="text-sm text-muted-foreground bg-yellow-50 border border-yellow-200 rounded p-3 mb-2">
                 <span>
-                  You do not have any Blossom server tagged with{" "}
-                  <b>"initial upload"</b>.<br />
-                  Please go to{" "}
+                  You do not have any Blossom server tagged with <b>"initial upload"</b>.<br />
+                  Please go to{' '}
                   <a href="/settings" className="underline text-blue-600">
                     Settings
-                  </a>{" "}
-                  and assign the <b>"initial upload"</b> tag to at least one
-                  server.
+                  </a>{' '}
+                  and assign the <b>"initial upload"</b> tag to at least one server.
                 </span>
               </div>
             ) : (
@@ -577,19 +519,12 @@ export function VideoUpload() {
                 <div className="flex flex-col gap-2">
                   <Label>Uploaded to...</Label>
                   <ul className="flex flex-col gap-1">
-                    {(uploadInfo.uploadedBlobs ?? []).map((blob) => (
+                    {(uploadInfo.uploadedBlobs ?? []).map(blob => (
                       <li key={blob.url} className="flex items-center gap-2">
                         <Check className="w-5 h-5 text-green-500" />
 
-                        <Badge variant="secondary">
-                          {formatBlobUrl(blob.url)}
-                        </Badge>
-                        <a
-                          href={blob.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          title="Open uploaded video URL"
-                        >
+                        <Badge variant="secondary">{formatBlobUrl(blob.url)}</Badge>
+                        <a href={blob.url} target="_blank" rel="noopener noreferrer" title="Open uploaded video URL">
                           <ExternalLink className="w-5 h-5" />
                         </a>
                       </li>
@@ -598,37 +533,27 @@ export function VideoUpload() {
                 </div>
               )
             )}
-            {uploadInfo.mirroredBlobs &&
-              uploadInfo.mirroredBlobs.length > 0 && (
-                <div className="flex flex-col gap-2 mt-4">
-                  <Label>Mirrored to...</Label>
-                  <ul className="flex flex-col gap-1">
-                    {(uploadInfo.mirroredBlobs ?? []).map((blob) => (
-                      <li key={blob.url} className="flex items-center gap-2">
-                        <Check className="w-5 h-5 text-green-500" />
-                        <Badge variant="secondary">
-                          {formatBlobUrl(blob.url)}
-                        </Badge>
-                        <a
-                          href={blob.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          title="Open mirrored video URL"
-                        >
-                          <ExternalLink className="w-5 h-5" />
-                        </a>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
+            {uploadInfo.mirroredBlobs && uploadInfo.mirroredBlobs.length > 0 && (
+              <div className="flex flex-col gap-2 mt-4">
+                <Label>Mirrored to...</Label>
+                <ul className="flex flex-col gap-1">
+                  {(uploadInfo.mirroredBlobs ?? []).map(blob => (
+                    <li key={blob.url} className="flex items-center gap-2">
+                      <Check className="w-5 h-5 text-green-500" />
+                      <Badge variant="secondary">{formatBlobUrl(blob.url)}</Badge>
+                      <a href={blob.url} target="_blank" rel="noopener noreferrer" title="Open mirrored video URL">
+                        <ExternalLink className="w-5 h-5" />
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
             {/* Infinite progress spinner while uploading */}
             {uploadStarted && (
               <div className="flex items-center gap-2 mt-4">
                 <Loader2 className="animate-spin h-5 w-5 text-primary" />
-                <span className="text-sm text-muted-foreground">
-                  Uploading...
-                </span>
+                <span className="text-sm text-muted-foreground">Uploading...</span>
               </div>
             )}
           </div>
@@ -638,12 +563,7 @@ export function VideoUpload() {
             <>
               <div className="flex flex-col gap-2">
                 <Label htmlFor="title">Title</Label>
-                <Input
-                  id="title"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  required
-                />
+                <Input id="title" value={title} onChange={e => setTitle(e.target.value)} required />
               </div>
 
               <div className="flex flex-col gap-2">
@@ -651,7 +571,7 @@ export function VideoUpload() {
                 <Textarea
                   id="description"
                   value={description}
-                  onChange={(e) => setDescription(e.target.value)}
+                  onChange={e => setDescription(e.target.value)}
                   required
                 />
               </div>
@@ -661,26 +581,22 @@ export function VideoUpload() {
                 <Input
                   id="tags"
                   value={tagInput}
-                  onChange={(e) => setTagInput(e.target.value)}
+                  onChange={e => setTagInput(e.target.value)}
                   onKeyDown={handleAddTag}
                   onBlur={() => {
                     if (tagInput.trim()) {
                       if (!tags.includes(tagInput.trim())) {
                         setTags([...tags, tagInput.trim()]);
                       }
-                      setTagInput("");
+                      setTagInput('');
                     }
                   }}
                   placeholder="Press Enter to add tags"
                 />
                 {tags.length > 0 && (
                   <div className="flex flex-wrap gap-2 mt-2">
-                    {tags.map((tag) => (
-                      <Badge
-                        key={tag}
-                        variant="secondary"
-                        className="flex items-center gap-1"
-                      >
+                    {tags.map(tag => (
+                      <Badge key={tag} variant="secondary" className="flex items-center gap-1">
                         {tag}
                         <button
                           type="button"
@@ -705,48 +621,27 @@ export function VideoUpload() {
                 >
                   <div className="flex items-center gap-2">
                     <RadioGroupItem value="generated" id="generated-thumb" />
-                    <Label htmlFor="generated-thumb">
-                      Use generated thumbnail
-                    </Label>
+                    <Label htmlFor="generated-thumb">Use generated thumbnail</Label>
                   </div>
                   <div className="flex items-center gap-2">
                     <RadioGroupItem value="upload" id="upload-thumb" />
-                    <Label htmlFor="upload-thumb">
-                      Upload custom thumbnail
-                    </Label>
+                    <Label htmlFor="upload-thumb">Upload custom thumbnail</Label>
                   </div>
                 </RadioGroup>
-                {thumbnailSource === "generated" && thumbnailBlob && (
+                {thumbnailSource === 'generated' && thumbnailBlob && (
                   <div className="mt-4">
-                    <img
-                      src={thumbnailUrl}
-                      alt="Generated thumbnail"
-                      className="rounded border mt-2 max-h-[320px]"
-                    />
+                    <img src={thumbnailUrl} alt="Generated thumbnail" className="rounded border mt-2 max-h-[320px]" />
                   </div>
                 )}
-                {thumbnailSource === "upload" && (
-                  <Input
-                    id="thumbnail"
-                    type="file"
-                    accept="image/*"
-                    onChange={handleThumbnailChange}
-                    required
-                  />
+                {thumbnailSource === 'upload' && (
+                  <Input id="thumbnail" type="file" accept="image/*" onChange={handleThumbnailChange} required />
                 )}
               </div>
             </>
           )}
-
         </CardContent>
         <CardFooter className="flex justify-end gap-2">
-          <Button
-            type="button"
-            variant="secondary"
-            onClick={handleReset}
-            title="Reset form"
-            aria-label="Reset form"
-          >
+          <Button type="button" variant="secondary" onClick={handleReset} title="Reset form" aria-label="Reset form">
             <Trash className="w-5 h-5" />
           </Button>
           <Button

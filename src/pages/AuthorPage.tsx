@@ -1,23 +1,23 @@
-import { useParams } from "react-router-dom";
-import { useAuthor } from "@/hooks/useAuthor";
-import { useNostr } from "@nostrify/react";
-import { useQuery } from "@tanstack/react-query";
-import { VideoCard } from "@/components/VideoCard";
-import { FollowButton } from "@/components/FollowButton";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Badge } from "@/components/ui/badge";
-import { Link } from "lucide-react";
-import { formatDistanceToNow } from "date-fns";
-import { useAppContext } from "@/hooks/useAppContext";
-import { processEvents } from "@/utils/video-event";
-import { nip19 } from "nostr-tools";
-import { CollapsibleText } from "@/components/ui/collapsible-text";
-import { useEffect, useMemo, useState } from "react";
-import { useReportedPubkeys } from "@/hooks/useReportedPubkeys";
+import { useParams } from 'react-router-dom';
+import { useAuthor } from '@/hooks/useAuthor';
+import { useNostr } from '@nostrify/react';
+import { useQuery } from '@tanstack/react-query';
+import { VideoCard } from '@/components/VideoCard';
+import { FollowButton } from '@/components/FollowButton';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Badge } from '@/components/ui/badge';
+import { Link } from 'lucide-react';
+import { formatDistanceToNow } from 'date-fns';
+import { useAppContext } from '@/hooks/useAppContext';
+import { processEvents } from '@/utils/video-event';
+import { nip19 } from 'nostr-tools';
+import { CollapsibleText } from '@/components/ui/collapsible-text';
+import { useEffect, useMemo, useState } from 'react';
+import { useReportedPubkeys } from '@/hooks/useReportedPubkeys';
 
 interface AuthorStats {
   videoCount: number;
@@ -25,7 +25,7 @@ interface AuthorStats {
   joinedDate: Date;
 }
 
-type Tabs = "videos" | "shorts" | "tags";
+type Tabs = 'videos' | 'shorts' | 'tags';
 
 function AuthorProfile({ pubkey }: { pubkey: string }) {
   const { data: metadata, isLoading } = useAuthor(pubkey);
@@ -56,22 +56,13 @@ function AuthorProfile({ pubkey }: { pubkey: string }) {
       <div className="space-y-4 flex-1">
         <div className="flex items-start justify-between">
           <div>
-            <h1 className="text-2xl font-bold">
-              {author?.display_name || name}
-            </h1>
-            {author?.nip05 && (
-              <p className="text-muted-foreground">{author.nip05}</p>
-            )}
+            <h1 className="text-2xl font-bold">{author?.display_name || name}</h1>
+            {author?.nip05 && <p className="text-muted-foreground">{author.nip05}</p>}
           </div>
           <FollowButton pubkey={pubkey} />
         </div>
 
-        {author?.about && (
-          <CollapsibleText
-            text={author.about}
-            className="text-muted-foreground"
-          />
-        )}
+        {author?.about && <CollapsibleText text={author.about} className="text-muted-foreground" />}
 
         <div className="flex items-center gap-4">
           {author?.website && (
@@ -95,15 +86,15 @@ export function AuthorPage() {
   const { npub } = useParams<{ npub: string }>();
   const { nostr } = useNostr();
   const { config } = useAppContext();
-  const [activeTab, setActiveTab] = useState<Tabs>("videos");
+  const [activeTab, setActiveTab] = useState<Tabs>('videos');
 
-  const pubkey = nip19.decode(npub ?? "").data as string;
+  const pubkey = nip19.decode(npub ?? '').data as string;
 
   const blockedPubkeys = useReportedPubkeys();
 
   // Query for author's videos
   const { data: allVideos = [], isLoading: isLoadingVideos } = useQuery({
-    queryKey: ["author-videos", pubkey],
+    queryKey: ['author-videos', pubkey],
     queryFn: async ({ signal }) => {
       if (!pubkey) return [];
 
@@ -122,9 +113,7 @@ export function AuthorPage() {
       );
 
       const allEvents = events.flat();
-      const uniqueEvents = Array.from(
-        new Map(allEvents.map((event) => [event.id, event])).values()
-      );
+      const uniqueEvents = Array.from(new Map(allEvents.map(event => [event.id, event])).values());
 
       return processEvents(Array.from(uniqueEvents.values()), config.relays, blockedPubkeys);
     },
@@ -135,36 +124,27 @@ export function AuthorPage() {
   const stats: AuthorStats = {
     videoCount: allVideos.length,
     totalViews: 0, // Could be implemented with NIP-78 view counts
-    joinedDate:
-      allVideos.length > 0
-        ? new Date(Math.min(...allVideos.map((v) => v.created_at * 1000)))
-        : new Date(),
+    joinedDate: allVideos.length > 0 ? new Date(Math.min(...allVideos.map(v => v.created_at * 1000))) : new Date(),
   };
 
   // Get unique tags from all videos
   const uniqueTags = useMemo(
     () =>
-      Array.from(new Set(allVideos.flatMap((video) => video.tags)))
+      Array.from(new Set(allVideos.flatMap(video => video.tags)))
         .filter(Boolean)
         .sort(),
     [allVideos]
   );
 
-  const shorts = useMemo(
-    () => allVideos.filter((v) => v.type == "shorts"),
-    [allVideos]
-  );
+  const shorts = useMemo(() => allVideos.filter(v => v.type == 'shorts'), [allVideos]);
 
-  const videos = useMemo(
-    () => allVideos.filter((v) => v.type == "videos"),
-    [allVideos]
-  );
+  const videos = useMemo(() => allVideos.filter(v => v.type == 'videos'), [allVideos]);
 
   useEffect(() => {
     if (videos.length > shorts.length) {
-      setActiveTab("videos");
+      setActiveTab('videos');
     } else {
-      setActiveTab("shorts");
+      setActiveTab('shorts');
     }
   }, [shorts, videos]);
 
@@ -184,16 +164,11 @@ export function AuthorPage() {
             </div>
             <div>
               <span className="text-muted-foreground">Joined</span>
-              <span className="ml-2">
-                {formatDistanceToNow(stats.joinedDate, { addSuffix: true })}
-              </span>
+              <span className="ml-2">{formatDistanceToNow(stats.joinedDate, { addSuffix: true })}</span>
             </div>
           </div>
 
-          <Tabs
-            value={activeTab}
-            onValueChange={(v) => setActiveTab(v as Tabs)}
-          >
+          <Tabs value={activeTab} onValueChange={v => setActiveTab(v as Tabs)}>
             <TabsList>
               {videos.length > 0 && (
                 <TabsTrigger value="videos" className="cursor-pointer">
@@ -223,19 +198,12 @@ export function AuthorPage() {
                 </div>
               ) : videos.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                  {videos.map((video) => (
-                    <VideoCard
-                      key={video.id}
-                      video={video}
-                      hideAuthor
-                      format="horizontal"
-                    />
+                  {videos.map(video => (
+                    <VideoCard key={video.id} video={video} hideAuthor format="horizontal" />
                   ))}
                 </div>
               ) : (
-                <div className="text-center py-12 text-muted-foreground">
-                  No videos uploaded yet
-                </div>
+                <div className="text-center py-12 text-muted-foreground">No videos uploaded yet</div>
               )}
             </TabsContent>
 
@@ -253,27 +221,20 @@ export function AuthorPage() {
               ) : shorts.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6">
                   {shorts
-                    .filter((v) => v.type)
-                    .map((video) => (
-                      <VideoCard
-                        key={video.id}
-                        video={video}
-                        hideAuthor
-                        format="vertical"
-                      />
+                    .filter(v => v.type)
+                    .map(video => (
+                      <VideoCard key={video.id} video={video} hideAuthor format="vertical" />
                     ))}
                 </div>
               ) : (
-                <div className="text-center py-12 text-muted-foreground">
-                  No videos uploaded yet
-                </div>
+                <div className="text-center py-12 text-muted-foreground">No videos uploaded yet</div>
               )}
             </TabsContent>
 
             <TabsContent value="tags" className="mt-6">
               <ScrollArea className="h-[400px]">
                 <div className="flex flex-wrap gap-2">
-                  {uniqueTags.map((tag) => (
+                  {uniqueTags.map(tag => (
                     <Badge key={tag} variant="secondary">
                       {tag}
                     </Badge>

@@ -1,7 +1,7 @@
-import { useState, useRef, useEffect } from "react";
-import { Button } from "./button";
-import { ChevronDown, ChevronUp } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { useState, useRef, useEffect } from 'react';
+import { Button } from './button';
+import { ChevronDown, ChevronUp } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface CollapsibleTextProps {
   text: string;
@@ -57,22 +57,11 @@ export function CollapsibleText({ text, maxLines = 5, className }: CollapsibleTe
 
   return (
     <div className={className}>
-      <p
-        ref={textRef}
-        className={cn(
-          "whitespace-pre-wrap",
-          !isExpanded && "line-clamp-5"
-        )}
-      >
+      <p ref={textRef} className={cn('whitespace-pre-wrap', !isExpanded && 'line-clamp-5')}>
         {renderTextWithLinks(text)}
       </p>
       {showButton && (
-        <Button
-          variant="ghost"
-          size="sm"
-          className="mt-2 h-8 px-2"
-          onClick={() => setIsExpanded(!isExpanded)}
-        >
+        <Button variant="ghost" size="sm" className="mt-2 h-8 px-2" onClick={() => setIsExpanded(!isExpanded)}>
           {isExpanded ? (
             <>
               Show less
@@ -88,4 +77,4 @@ export function CollapsibleText({ text, maxLines = 5, className }: CollapsibleTe
       )}
     </div>
   );
-} 
+}

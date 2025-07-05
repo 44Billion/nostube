@@ -1,40 +1,34 @@
-import { useState } from "react";
-import { useAppContext } from "@/hooks/useAppContext";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Cog, XIcon } from "lucide-react";
-import { BlossomServer, BlossomServerTag } from "@/contexts/AppContext";
-import { Badge } from "@/components/ui/badge";
+import { useState } from 'react';
+import { useAppContext } from '@/hooks/useAppContext';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Cog, XIcon } from 'lucide-react';
+import { BlossomServer, BlossomServerTag } from '@/contexts/AppContext';
+import { Badge } from '@/components/ui/badge';
 import {
   DropdownMenu,
   DropdownMenuTrigger,
   DropdownMenuContent,
   DropdownMenuCheckboxItem,
-} from "@/components/ui/dropdown-menu";
-import { cn } from "@/lib/utils";
-import { useUserBlossomServers } from "@/hooks/useUserBlossomServers";
+} from '@/components/ui/dropdown-menu';
+import { cn } from '@/lib/utils';
+import { useUserBlossomServers } from '@/hooks/useUserBlossomServers';
 
 const presetBlossomServers: BlossomServer[] = [
   {
-    url: "https://temp-st.apps2.slidestr.net",
-    name: "temp-st.apps2.slidestr.net",
-    tags: ["initial upload"],
+    url: 'https://temp-st.apps2.slidestr.net',
+    name: 'temp-st.apps2.slidestr.net',
+    tags: ['initial upload'],
   },
 ];
 
-const availableTags: BlossomServerTag[] = ["mirror", "initial upload"];
+const availableTags: BlossomServerTag[] = ['mirror', 'initial upload'];
 
 export function BlossomServersSection() {
   const { config, updateConfig } = useAppContext();
-  const [newServerUrl, setNewServerUrl] = useState("");
+  const [newServerUrl, setNewServerUrl] = useState('');
   const userBlossomServers = useUserBlossomServers();
 
   /*
@@ -52,40 +46,38 @@ export function BlossomServersSection() {
   const handleAddServer = () => {
     if (newServerUrl.trim()) {
       const normalizedUrl = normalizeServerUrl(newServerUrl.trim());
-      updateConfig((currentConfig) => {
+      updateConfig(currentConfig => {
         const servers = currentConfig.blossomServers || [];
-        if (servers.some((s) => s.url === normalizedUrl)) return currentConfig;
+        if (servers.some(s => s.url === normalizedUrl)) return currentConfig;
         const name = deriveServerName(normalizedUrl);
         return {
           ...currentConfig,
           blossomServers: [...servers, { url: normalizedUrl, name, tags: [] }],
         };
       });
-      setNewServerUrl("");
+      setNewServerUrl('');
     }
   };
 
   const handleRemoveServer = (urlToRemove: string) => {
-    updateConfig((currentConfig) => ({
+    updateConfig(currentConfig => ({
       ...currentConfig,
-      blossomServers: (currentConfig.blossomServers || []).filter(
-        (s) => s.url !== urlToRemove
-      ),
+      blossomServers: (currentConfig.blossomServers || []).filter(s => s.url !== urlToRemove),
     }));
   };
 
   const handleResetServers = () => {
     if (userBlossomServers.data && userBlossomServers.data?.length > 0) {
-      updateConfig((currentConfig) => ({
+      updateConfig(currentConfig => ({
         ...currentConfig,
-        blossomServers: userBlossomServers.data.map((s) => ({
+        blossomServers: userBlossomServers.data.map(s => ({
           url: s,
-          name: s.replace(/^https?:\/\//, ""),
+          name: s.replace(/^https?:\/\//, ''),
           tags: [],
         })),
       }));
     } else {
-      updateConfig((currentConfig) => ({
+      updateConfig(currentConfig => ({
         ...currentConfig,
         blossomServers: [...presetBlossomServers],
       }));
@@ -93,15 +85,13 @@ export function BlossomServersSection() {
   };
 
   const handleToggleTag = (serverUrl: string, tag: BlossomServerTag) => {
-    updateConfig((currentConfig) => ({
+    updateConfig(currentConfig => ({
       ...currentConfig,
-      blossomServers: (currentConfig.blossomServers || []).map((s) =>
+      blossomServers: (currentConfig.blossomServers || []).map(s =>
         s.url === serverUrl
           ? {
               ...s,
-              tags: s.tags.includes(tag)
-                ? s.tags.filter((t) => t !== tag)
-                : [...s.tags, tag],
+              tags: s.tags.includes(tag) ? s.tags.filter(t => t !== tag) : [...s.tags, tag],
             }
           : s
       ),
@@ -111,52 +101,46 @@ export function BlossomServersSection() {
   const normalizeServerUrl = (url: string): string => {
     const trimmed = url.trim();
     if (!trimmed) return trimmed;
-    if (trimmed.startsWith("http")) {
+    if (trimmed.startsWith('http')) {
       return trimmed;
     }
     return `https://${trimmed}`;
   };
 
   const deriveServerName = (url: string): string => {
-    return url.replace(/^https?:\/\//, "").replace(/\/$/, "");
+    return url.replace(/^https?:\/\//, '').replace(/\/$/, '');
   };
 
   return (
     <Card className="max-w-2xl mx-auto">
       <CardHeader>
         <CardTitle>Blossom Servers</CardTitle>
-        <CardDescription>
-          Manage the Blossom servers used for file uploads.
-        </CardDescription>
+        <CardDescription>Manage the Blossom servers used for file uploads.</CardDescription>
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
           <div>
             {(config.blossomServers?.length ?? 0) === 0 ? (
               <p className="text-muted-foreground">
-                No Blossom servers configured. Add some below or reset to
-                defaults.
+                No Blossom servers configured. Add some below or reset to defaults.
               </p>
             ) : (
               <ScrollArea className="w-full rounded-md border p-4">
                 <ul className="space-y-2">
-                  {config.blossomServers?.map((server) => (
-                    <li
-                      key={server.url}
-                      className="flex items-center justify-between text-sm"
-                    >
+                  {config.blossomServers?.map(server => (
+                    <li key={server.url} className="flex items-center justify-between text-sm">
                       <div className="flex flex-col gap-1">
                         <div className="flex gap-2 mt-1">
                           <span>{server.name || server.url}</span>
-                          {server.tags.map((tag) => (
+                          {server.tags.map(tag => (
                             <Badge
                               key={tag}
                               variant="default"
                               className={cn(
-                                ["text-xs"],
-                                tag == "mirror"
-                                  ? "bg-blue-500 hover:bg-blue-500/90"
-                                  : "bg-orange-500 hover:bg-orange-500/90"
+                                ['text-xs'],
+                                tag == 'mirror'
+                                  ? 'bg-blue-500 hover:bg-blue-500/90'
+                                  : 'bg-orange-500 hover:bg-orange-500/90'
                               )}
                             >
                               {tag}
@@ -167,34 +151,24 @@ export function BlossomServersSection() {
                       <div className="flex items-center gap-2">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              aria-label="Edit tags"
-                            >
+                            <Button variant="ghost" size="icon" aria-label="Edit tags">
                               <span className="sr-only">Edit tags</span>
                               <Cog className="h-6 w-6" />
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            {availableTags.map((tag) => (
+                            {availableTags.map(tag => (
                               <DropdownMenuCheckboxItem
                                 key={tag}
                                 checked={server.tags.includes(tag)}
-                                onCheckedChange={() =>
-                                  handleToggleTag(server.url, tag)
-                                }
+                                onCheckedChange={() => handleToggleTag(server.url, tag)}
                               >
                                 {tag}
                               </DropdownMenuCheckboxItem>
                             ))}
                           </DropdownMenuContent>
                         </DropdownMenu>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleRemoveServer(server.url)}
-                        >
+                        <Button variant="ghost" size="icon" onClick={() => handleRemoveServer(server.url)}>
                           <XIcon className="h-6 w-6" />
                         </Button>
                       </div>
@@ -209,9 +183,9 @@ export function BlossomServersSection() {
             <Input
               placeholder="Add new Blossom server URL (e.g., https://blossom.nostr.build)"
               value={newServerUrl}
-              onChange={(e) => setNewServerUrl(e.target.value)}
-              onKeyPress={(e) => {
-                if (e.key === "Enter") {
+              onChange={e => setNewServerUrl(e.target.value)}
+              onKeyPress={e => {
+                if (e.key === 'Enter') {
                   handleAddServer();
                 }
               }}

@@ -1,12 +1,12 @@
-import { useCurrentUser } from "@/hooks/useCurrentUser";
-import { useNostr } from "@nostrify/react";
-import { useQuery } from "@tanstack/react-query";
+import { useCurrentUser } from '@/hooks/useCurrentUser';
+import { useNostr } from '@nostrify/react';
+import { useQuery } from '@tanstack/react-query';
 
 export function useLikedEvents() {
   const { user } = useCurrentUser();
   const { nostr } = useNostr();
 
-  return useQuery<string[]> ({
+  return useQuery<string[]>({
     queryKey: ['likedVideoIds', user?.pubkey],
     queryFn: async ({ signal }) => {
       if (!user) {
@@ -14,10 +14,12 @@ export function useLikedEvents() {
       }
 
       const likedEvents = await nostr.query(
-        [{
-          kinds: [7],
-          authors: [user.pubkey],
-        }],
+        [
+          {
+            kinds: [7],
+            authors: [user.pubkey],
+          },
+        ],
         { signal }
       );
 
@@ -33,4 +35,4 @@ export function useLikedEvents() {
     },
     enabled: !!user,
   });
-} 
+}

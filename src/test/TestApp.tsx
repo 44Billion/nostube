@@ -20,17 +20,15 @@ export function TestApp({ children }: TestAppProps) {
   const defaultConfig: AppConfig = {
     theme: 'light',
     relays: ['wss://relay.nostr.band'],
-    videoType: "videos",
+    videoType: 'videos',
   };
 
   return (
     <BrowserRouter>
-      <AppProvider storageKey='test-app-config' defaultConfig={defaultConfig}>
+      <AppProvider storageKey="test-app-config" defaultConfig={defaultConfig}>
         <QueryClientProvider client={queryClient}>
-          <NostrLoginProvider storageKey='test-login'>
-            <NostrProvider relayUrl={defaultConfig.relays[0]}>
-              {children}
-            </NostrProvider>
+          <NostrLoginProvider storageKey="test-login">
+            <NostrProvider relayUrl={defaultConfig.relays[0]}>{children}</NostrProvider>
           </NostrLoginProvider>
         </QueryClientProvider>
       </AppProvider>

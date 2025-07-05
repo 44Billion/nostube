@@ -16,12 +16,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { Skeleton } from '@/components/ui/skeleton';
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from '@/components/ui/accordion';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { nip19 } from 'nostr-tools';
@@ -40,37 +35,25 @@ interface VideoListProps {
 }
 
 function VideoList({ videos, onRemove }: VideoListProps) {
-const navigate = useNavigate();
+  const navigate = useNavigate();
 
   if (videos.length === 0) {
-    return (
-      <p className="text-sm text-muted-foreground py-2">
-        No videos in this playlist yet.
-      </p>
-    );
+    return <p className="text-sm text-muted-foreground py-2">No videos in this playlist yet.</p>;
   }
 
   return (
     <div className="space-y-2">
-      {videos.map((video) => (
-        <div
-          key={video.id}
-          className="flex items-center justify-between py-2 border-b last:border-0"
-        >
+      {videos.map(video => (
+        <div key={video.id} className="flex items-center justify-between py-2 border-b last:border-0">
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium truncate">
-              <a href='#' onClick={() => navigate(`/video/${nip19.neventEncode({id: video.id, kind: video.kind})}`)}>{video.title || 'Untitled Video'}</a>
+              <a href="#" onClick={() => navigate(`/video/${nip19.neventEncode({ id: video.id, kind: video.kind })}`)}>
+                {video.title || 'Untitled Video'}
+              </a>
             </p>
-            <p className="text-xs text-muted-foreground">
-              Added {formatDate(video.added_at)}
-            </p>
+            <p className="text-xs text-muted-foreground">Added {formatDate(video.added_at)}</p>
           </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => onRemove(video.id)}
-            className="ml-2 flex-shrink-0"
-          >
+          <Button variant="ghost" size="icon" onClick={() => onRemove(video.id)} className="ml-2 flex-shrink-0">
             <Trash2 className="h-4 w-4" />
           </Button>
         </div>
@@ -104,9 +87,7 @@ export function PlaylistManager() {
       <Card className="border-dashed">
         <CardContent className="py-12 px-8 text-center">
           <div className="max-w-sm mx-auto space-y-6">
-            <p className="text-muted-foreground">
-              Please log in to manage your playlists
-            </p>
+            <p className="text-muted-foreground">Please log in to manage your playlists</p>
           </div>
         </CardContent>
       </Card>
@@ -120,7 +101,7 @@ export function PlaylistManager() {
           <Skeleton className="h-10 w-32" />
           <Skeleton className="h-10 w-32" />
         </div>
-        {[1, 2, 3].map((i) => (
+        {[1, 2, 3].map(i => (
           <Card key={i}>
             <CardHeader>
               <Skeleton className="h-6 w-48" />
@@ -160,22 +141,17 @@ export function PlaylistManager() {
   return (
     <div className="space-y-4">
       <div className="flex justify-end">
-        <CreatePlaylistDialog
-          onCreatePlaylist={createPlaylist}
-          onClose={() => setIsCreatePlaylistDialogOpen(false)}
-        />
+        <CreatePlaylistDialog onCreatePlaylist={createPlaylist} onClose={() => setIsCreatePlaylistDialogOpen(false)} />
       </div>
-      
+
       <Accordion type="multiple" className="w-full">
-        {sortedPlaylists.map((playlist) => (
+        {sortedPlaylists.map(playlist => (
           <AccordionItem key={playlist.identifier} value={playlist.identifier}>
             <AccordionTrigger className="hover:no-underline">
               <div className="flex-1 flex items-center justify-between mr-4">
                 <div>
                   <h3 className="text-base font-semibold">{playlist.name}</h3>
-                  {playlist.description && (
-                    <p className="text-sm text-muted-foreground">{playlist.description}</p>
-                  )}
+                  {playlist.description && <p className="text-sm text-muted-foreground">{playlist.description}</p>}
                 </div>
                 <div className="flex items-center space-x-4">
                   <span className="text-sm text-muted-foreground">
@@ -184,7 +160,7 @@ export function PlaylistManager() {
                   <Button
                     variant="ghost"
                     size="icon"
-                    onClick={(e) => {
+                    onClick={e => {
                       e.stopPropagation();
                       setPlaylistToDelete(playlist);
                     }}
@@ -195,10 +171,7 @@ export function PlaylistManager() {
               </div>
             </AccordionTrigger>
             <AccordionContent>
-              <VideoList
-                videos={playlist.videos}
-                onRemove={(videoId) => removeVideo(playlist.identifier, videoId)}
-              />
+              <VideoList videos={playlist.videos} onRemove={videoId => removeVideo(playlist.identifier, videoId)} />
             </AccordionContent>
           </AccordionItem>
         ))}
@@ -214,15 +187,8 @@ export function PlaylistManager() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDelete}
-              disabled={isDeleting}
-            >
-              {isDeleting ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : (
-                <Trash2 className="mr-2 h-4 w-4" />
-              )}
+            <AlertDialogAction onClick={handleDelete} disabled={isDeleting}>
+              {isDeleting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />}
               Delete Playlist
             </AlertDialogAction>
           </AlertDialogFooter>

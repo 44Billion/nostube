@@ -14,6 +14,14 @@ declare namespace JSX {
     'media-fullscreen-button': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement>, HTMLElement>;
     'media-playback-rate-button': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement>, HTMLElement>;
     'media-controller': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement>, HTMLElement>;
-    'hls-video': React.DetailedHTMLProps<React.HTMLAttributes<HTMLVideoElement>, HTMLVideoElement> & { src: string; slot: string; autoPlay?: boolean; loop?: boolean; poster?: string; crossorigin?: boolean; onTimeUpdate?: () => void };
+    'hls-video': React.DetailedHTMLProps<React.HTMLAttributes<HTMLVideoElement>, HTMLVideoElement> & {
+      src: string;
+      slot: string;
+      autoPlay?: boolean;
+      loop?: boolean;
+      poster?: string;
+      crossorigin?: boolean;
+      onTimeUpdate?: () => void;
+    };
   }
-} 
+}

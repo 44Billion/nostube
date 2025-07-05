@@ -1,13 +1,9 @@
-import { ReactNode, useState, useCallback, useEffect } from "react";
-import { useLocalStorage } from "@/hooks/useLocalStorage";
-import {
-  AppContext,
-  type AppConfig,
-  type AppContextType,
-} from "@/contexts/AppContext";
-import { useUserRelays } from "@/hooks/useUserRelays";
-import { useCurrentUser } from "@/hooks/useCurrentUser";
-import { mergeRelays } from "@/lib/utils";
+import { ReactNode, useState, useCallback, useEffect } from 'react';
+import { useLocalStorage } from '@/hooks/useLocalStorage';
+import { AppContext, type AppConfig, type AppContextType } from '@/contexts/AppContext';
+import { useUserRelays } from '@/hooks/useUserRelays';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
+import { mergeRelays } from '@/lib/utils';
 
 interface AppProviderProps {
   children: ReactNode;
@@ -23,10 +19,7 @@ export function AppProvider(props: AppProviderProps) {
   const { children, storageKey, defaultConfig, presetRelays } = props;
 
   // App configuration state with localStorage persistence
-  const [config, setConfig] = useLocalStorage<AppConfig>(
-    storageKey,
-    defaultConfig
-  );
+  const [config, setConfig] = useLocalStorage<AppConfig>(storageKey, defaultConfig);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const { user } = useCurrentUser();
@@ -38,7 +31,7 @@ export function AppProvider(props: AppProviderProps) {
   };
 
   const toggleSidebar = useCallback(() => {
-    setIsSidebarOpen((prev) => {
+    setIsSidebarOpen(prev => {
       const newState = !prev;
       if (newState) {
         window.scrollTo(0, 0);
@@ -48,16 +41,11 @@ export function AppProvider(props: AppProviderProps) {
   }, []);
 
   useEffect(() => {
-    if (
-      (config.relays || []).length == 0 &&
-      !userRelays.isLoading &&
-      userRelays.data &&
-      userRelays.data.length > 0
-    ) {
-      console.log([(config.relays || []), userRelays.data.map((r) => r.url)]);
+    if ((config.relays || []).length == 0 && !userRelays.isLoading && userRelays.data && userRelays.data.length > 0) {
+      console.log([config.relays || [], userRelays.data.map(r => r.url)]);
       setConfig({
         ...config,
-        relays: mergeRelays([(config.relays || []), userRelays.data.map((r) => r.url)]),
+        relays: mergeRelays([config.relays || [], userRelays.data.map(r => r.url)]),
       });
     }
   }, [userRelays.data]);
@@ -84,9 +72,5 @@ export function AppProvider(props: AppProviderProps) {
     toggleSidebar,
   };
 
-  return (
-    <AppContext.Provider value={appContextValue}>
-      {children}
-    </AppContext.Provider>
-  );
+  return <AppContext.Provider value={appContextValue}>{children}</AppContext.Provider>;
 }

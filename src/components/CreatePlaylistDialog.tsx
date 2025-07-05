@@ -33,9 +33,9 @@ export function CreatePlaylistDialog({ onClose, onCreatePlaylist }: CreatePlayli
     e.preventDefault();
     if (!name.trim()) {
       toast({
-        title: "Error",
-        description: "Playlist name cannot be empty.",
-        variant: "destructive",
+        title: 'Error',
+        description: 'Playlist name cannot be empty.',
+        variant: 'destructive',
       });
       return;
     }
@@ -45,8 +45,8 @@ export function CreatePlaylistDialog({ onClose, onCreatePlaylist }: CreatePlayli
       await onCreatePlaylist(name, description);
 
       toast({
-        title: "Playlist created",
-        description: "Your new playlist has been created successfully.",
+        title: 'Playlist created',
+        description: 'Your new playlist has been created successfully.',
       });
       setName('');
       setDescription('');
@@ -54,9 +54,9 @@ export function CreatePlaylistDialog({ onClose, onCreatePlaylist }: CreatePlayli
       onClose();
     } catch (error) {
       toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to create playlist.",
-        variant: "destructive",
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to create playlist.',
+        variant: 'destructive',
       });
     } finally {
       setIsCreating(false);
@@ -74,38 +74,22 @@ export function CreatePlaylistDialog({ onClose, onCreatePlaylist }: CreatePlayli
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Create New Playlist</DialogTitle>
-          <DialogDescription>
-            Enter a name and optional description for your new playlist.
-          </DialogDescription>
+          <DialogDescription>Enter a name and optional description for your new playlist.</DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit}>
           <div className="grid gap-4 py-4">
             <div className="space-y-2">
               <Label htmlFor="name">Name</Label>
-              <Input
-                id="name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                required
-              />
+              <Input id="name" value={name} onChange={e => setName(e.target.value)} required />
             </div>
             <div className="space-y-2">
               <Label htmlFor="description">Description (optional)</Label>
-              <Textarea
-                id="description"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                rows={3}
-              />
+              <Textarea id="description" value={description} onChange={e => setDescription(e.target.value)} rows={3} />
             </div>
           </div>
           <DialogFooter>
             <Button type="submit" disabled={!name.trim() || isCreating}>
-              {isCreating ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : (
-                <Plus className="mr-2 h-4 w-4" />
-              )}
+              {isCreating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Plus className="mr-2 h-4 w-4" />}
               Create Playlist
             </Button>
           </DialogFooter>

@@ -20,7 +20,7 @@ export function RelaySettingsSection() {
   const handleAddRelay = () => {
     if (newRelayUrl.trim()) {
       const normalizedUrl = normalizeRelayUrl(newRelayUrl.trim());
-      updateConfig((currentConfig) => ({
+      updateConfig(currentConfig => ({
         ...currentConfig,
         relays: mergeRelays([[normalizedUrl], currentConfig.relays]),
       }));
@@ -29,16 +29,16 @@ export function RelaySettingsSection() {
   };
 
   const handleRemoveRelay = (urlToRemove: string) => {
-    updateConfig((currentConfig) => ({
+    updateConfig(currentConfig => ({
       ...currentConfig,
       relays: currentConfig.relays.filter(url => url !== urlToRemove),
     }));
   };
 
   const handleResetRelays = () => {
-    updateConfig((currentConfig) => ({
+    updateConfig(currentConfig => ({
       ...currentConfig,
-      relays: userRelays.data ? userRelays.data.map(r => r.url) :  presetRelays.map(r => r.url),
+      relays: userRelays.data ? userRelays.data.map(r => r.url) : presetRelays.map(r => r.url),
     }));
   };
 
@@ -65,7 +65,7 @@ export function RelaySettingsSection() {
             ) : (
               <ScrollArea className="w-full rounded-md border p-4">
                 <ul className="space-y-2">
-                  {config.relays.map((relayUrl) => (
+                  {config.relays.map(relayUrl => (
                     <li key={relayUrl} className="flex items-center justify-between text-sm">
                       <span>{relayUrl}</span>
                       <Button variant="ghost" size="icon" onClick={() => handleRemoveRelay(relayUrl)}>
@@ -82,8 +82,8 @@ export function RelaySettingsSection() {
             <Input
               placeholder="Add new relay URL (e.g., wss://relay.damus.io)"
               value={newRelayUrl}
-              onChange={(e) => setNewRelayUrl(e.target.value)}
-              onKeyPress={(e) => {
+              onChange={e => setNewRelayUrl(e.target.value)}
+              onKeyPress={e => {
                 if (e.key === 'Enter') {
                   handleAddRelay();
                 }
@@ -99,4 +99,4 @@ export function RelaySettingsSection() {
       </CardContent>
     </Card>
   );
-} 
+}

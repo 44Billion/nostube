@@ -1,8 +1,6 @@
-NIP-51
-======
+# NIP-51
 
-Lists
------
+## Lists
 
 `draft` `optional`
 
@@ -21,8 +19,8 @@ Standard lists use normal replaceable events, meaning users may only have a sing
 For example, _mute list_ can contain the public keys of spammers and bad actors users don't want to see in their feeds or receive annoying notifications from.
 
 | name              | kind  | description                                                 | expected tag items                                                                                  |
-| ---               | ---   | ---                                                         | ---                                                                                                 |
-| Follow list       |     3 | microblogging basic follow list, see [NIP-02](02.md)        | `"p"` (pubkeys -- with optional relay hint and petname)                                             |
+| ----------------- | ----- | ----------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| Follow list       | 3     | microblogging basic follow list, see [NIP-02](02.md)        | `"p"` (pubkeys -- with optional relay hint and petname)                                             |
 | Mute list         | 10000 | things the user doesn't want to see in their feeds          | `"p"` (pubkeys), `"t"` (hashtags), `"word"` (lowercase string), `"e"` (threads)                     |
 | Pinned notes      | 10001 | events the user intends to showcase in their profile page   | `"e"` (kind:1 notes)                                                                                |
 | Read/write relays | 10002 | where a user publishes to and where they expect mentions    | see [NIP-65](65.md)                                                                                 |
@@ -49,7 +47,7 @@ For example, _relay sets_ can be displayed in a dropdown UI to give users the op
 Aside from their main identifier, the `"d"` tag, sets can optionally have a `"title"`, an `"image"` and a `"description"` tags that can be used to enhance their UI.
 
 | name                  | kind  | description                                                                                  | expected tag items                                                                  |
-| ---                   | ---   | ---                                                                                          | ---                                                                                 |
+| --------------------- | ----- | -------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
 | Follow sets           | 30000 | categorized groups of users a client may choose to check out in different circumstances      | `"p"` (pubkeys)                                                                     |
 | Relay sets            | 30002 | user-defined relay groups the user can easily pick and choose from during various operations | `"relay"` (relay URLs)                                                              |
 | Bookmark sets         | 30003 | user-defined bookmarks categories , for when bookmarks must be in labeled separate groups    | `"e"` (kind:1 notes), `"a"` (kind:30023 articles), `"t"` (hashtags), `"r"` (URLs)   |
@@ -69,7 +67,7 @@ Aside from their main identifier, the `"d"` tag, sets can optionally have a `"ti
 Some clients have used these lists in the past, but they should work on transitioning to the [standard formats](#standard-lists) above.
 
 | kind  | "d" tag         | use instead                   |
-| ---   | ---             | ---                           |
+| ----- | --------------- | ----------------------------- |
 | 30000 | `"mute"`        | kind 10000 _mute list_        |
 | 30001 | `"pin"`         | kind 10001 _pin list_         |
 | 30001 | `"bookmark"`    | kind 10003 _bookmarks list_   |
@@ -106,7 +104,10 @@ Some clients have used these lists in the past, but they should work on transiti
     ["d", "jvdy9i4"],
     ["title", "Yaks"],
     ["image", "https://cdn.britannica.com/40/188540-050-9AC748DE/Yak-Himalayas-Nepal.jpg"],
-    ["description", "The domestic yak, also known as the Tartary ox, grunting ox, or hairy cattle, is a species of long-haired domesticated cattle found throughout the Himalayan region of the Indian subcontinent, the Tibetan Plateau, Gilgit-Baltistan, Tajikistan and as far north as Mongolia and Siberia."],
+    [
+      "description",
+      "The domestic yak, also known as the Tartary ox, grunting ox, or hairy cattle, is a species of long-haired domesticated cattle found throughout the Himalayan region of the Indian subcontinent, the Tibetan Plateau, Gilgit-Baltistan, Tajikistan and as far north as Mongolia and Siberia."
+    ],
     ["a", "30023:26dc95542e18b8b7aec2f14610f55c335abebec76f3db9e58c254661d0593a0c:95ODQzw3ajNoZ8SyMDOzQ"],
     ["a", "30023:54af95542e18b8b7aec2f14610f55c335abebec76f3db9e58c254661d0593a0c:1-MYP8dAhramH9J5gJWKx"],
     ["a", "30023:f8fe95542e18b8b7aec2f14610f55c335abebec76f3db9e58c254661d0593a0c:D2Tbd38bGrFvU0bIbvSMt"],
@@ -132,10 +133,10 @@ Some clients have used these lists in the past, but they should work on transiti
     ["e", "f27e2c91051de0c4e1da0d5dce22bfff9db0a9340e0326b4941ed78bae996c9e"], // MacOS dmg
     ["e", "9d24ddfab95ba3ff7c03fbd07ad011fff245abea431fb4d3787c2d04aad02332"], // Linux AppImage
     ["e", "340e0326b340e0326b4941ed78ba340e0326b4941ed78ba340e0326b49ed78ba"], // PWA
-    ["a", "32267:d6dc95542e18b8b7aec2f14610f55c335abebec76f3db9e58c254661d0593a0c:com.example.app"] // Reference to parent software application
+    ["a", "32267:d6dc95542e18b8b7aec2f14610f55c335abebec76f3db9e58c254661d0593a0c:com.example.app"], // Reference to parent software application
   ],
   "content": "Example App is a decentralized marketplace for apps",
-  "sig": "a9a4e2192eede77e6c9d24ddfab95ba3ff7c03fbd07ad011fff245abea431fb4d3787c2d04aad001cb039cb8de91d83ce30e9a94f82ac3c5a2372aa1294a96bd"
+  "sig": "a9a4e2192eede77e6c9d24ddfab95ba3ff7c03fbd07ad011fff245abea431fb4d3787c2d04aad001cb039cb8de91d83ce30e9a94f82ac3c5a2372aa1294a96bd",
 }
 ```
 
@@ -143,18 +144,18 @@ Some clients have used these lists in the past, but they should work on transiti
 
 ```jsonc
 {
-    "id": "d8037fa866eb5acd2159960b3ada7284172f7d687b5289cc72a96ca2b431b611",
-    "pubkey": "78ce6faa72264387284e647ba6938995735ec8c7d5c5a65737e55130f026307d",
-    "sig": "c1ce0a04521c020ae7485307cd86285530c1f778766a3fd594d662a73e7c28f307d7cd9a9ab642ae749fce62abbabb3a32facfe8d19a21fba551b60fae863d95",
-    "kind": 30267,
-    "created_at": 1729302793,
-    "content": "My nostr app selection",
-    "tags": [
-        ["d", "nostr"],
-        ["a", "32267:7579076d9aff0a4cfdefa7e2045f2486c7e5d8bc63bfc6b45397233e1bbfcb19:com.example.app1"],
-        ["a", "32267:045f2486c7e5d8bc63bfc6b45397233e1bbfcb197579076d9aff0a4cfdefa7e2:net.example.app2"],
-        ["a", "32267:264387284e647ba6938995735ec8c7d5c5a6f026307d78ce6faa725737e55130:pl.code.app3"]
-    ]
+  "id": "d8037fa866eb5acd2159960b3ada7284172f7d687b5289cc72a96ca2b431b611",
+  "pubkey": "78ce6faa72264387284e647ba6938995735ec8c7d5c5a65737e55130f026307d",
+  "sig": "c1ce0a04521c020ae7485307cd86285530c1f778766a3fd594d662a73e7c28f307d7cd9a9ab642ae749fce62abbabb3a32facfe8d19a21fba551b60fae863d95",
+  "kind": 30267,
+  "created_at": 1729302793,
+  "content": "My nostr app selection",
+  "tags": [
+    ["d", "nostr"],
+    ["a", "32267:7579076d9aff0a4cfdefa7e2045f2486c7e5d8bc63bfc6b45397233e1bbfcb19:com.example.app1"],
+    ["a", "32267:045f2486c7e5d8bc63bfc6b45397233e1bbfcb197579076d9aff0a4cfdefa7e2:net.example.app2"],
+    ["a", "32267:264387284e647ba6938995735ec8c7d5c5a6f026307d78ce6faa725737e55130:pl.code.app3"],
+  ],
 }
 ```
 

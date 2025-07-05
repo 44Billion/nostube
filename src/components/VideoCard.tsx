@@ -1,38 +1,28 @@
-import { Link } from "react-router-dom";
-import { useAuthor } from "@/hooks/useAuthor";
-import { formatDistance } from "date-fns";
-import { VideoEvent } from "@/utils/video-event";
-import { nip19 } from "nostr-tools";
-import { formatDuration } from "../lib/formatDuration";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { cn } from "@/lib/utils";
-import { Skeleton } from "@/components/ui/skeleton";
-import { useCurrentUser } from "@/hooks/useCurrentUser";
-import { useEffect, useState, useRef } from "react";
+import { Link } from 'react-router-dom';
+import { useAuthor } from '@/hooks/useAuthor';
+import { formatDistance } from 'date-fns';
+import { VideoEvent } from '@/utils/video-event';
+import { nip19 } from 'nostr-tools';
+import { formatDuration } from '../lib/formatDuration';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { cn } from '@/lib/utils';
+import { Skeleton } from '@/components/ui/skeleton';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
+import { useEffect, useState, useRef } from 'react';
 
 interface VideoCardProps {
   video: VideoEvent;
   hideAuthor?: boolean;
-  format: "vertical" | "horizontal" | "square";
+  format: 'vertical' | 'horizontal' | 'square';
 }
 
-export function VideoCard({
-  video,
-  hideAuthor,
-  format = "square",
-}: VideoCardProps) {
+export function VideoCard({ video, hideAuthor, format = 'square' }: VideoCardProps) {
   const author = useAuthor(video.pubkey);
   const metadata = author.data?.metadata;
-  const name =
-    metadata?.display_name || metadata?.name || video?.pubkey.slice(0, 8);
+  const name = metadata?.display_name || metadata?.name || video?.pubkey.slice(0, 8);
 
-  const aspectRatio =
-    format == "vertical"
-      ? "aspect-[9/16]"
-      : format == "square"
-      ? "aspect-[1/1]"
-      : "aspect-video";
-  const maxWidth = format == "vertical" && "sm:max-w-[280px] mx-auto";
+  const aspectRatio = format == 'vertical' ? 'aspect-[9/16]' : format == 'square' ? 'aspect-[1/1]' : 'aspect-video';
+  const maxWidth = format == 'vertical' && 'sm:max-w-[280px] mx-auto';
 
   const [isHovered, setIsHovered] = useState(false);
   const [videoLoaded, setVideoLoaded] = useState(false);
@@ -81,14 +71,12 @@ export function VideoCard({
 
   const handleVideoLoadedData = () => {
     setVideoLoaded(true);
-    videoRef.current
-      ?.play()
-      .catch((error) => console.error("Video autoplay blocked:", error));
+    videoRef.current?.play().catch(error => console.error('Video autoplay blocked:', error));
   };
 
   return (
     <div
-      className={cn("transition-all duration-200", maxWidth)}
+      className={cn('transition-all duration-200', maxWidth)}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
@@ -99,14 +87,12 @@ export function VideoCard({
               src={video.thumb}
               alt={video.title}
               className={cn(
-                video.contentWarning ? "blur-lg" : "",
-                "w-full object-cover transition-opacity duration-300",
+                video.contentWarning ? 'blur-lg' : '',
+                'w-full object-cover transition-opacity duration-300',
                 aspectRatio,
-                isHovered && videoLoaded ? "opacity-0 absolute" : "opacity-100"
+                isHovered && videoLoaded ? 'opacity-0 absolute' : 'opacity-100'
               )}
-              onError={(err) =>
-                console.error("error loading", video.thumb, err)
-              }
+              onError={err => console.error('error loading', video.thumb, err)}
             />
             {video.contentWarning && (
               <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-sm">
@@ -116,23 +102,17 @@ export function VideoCard({
               </div>
             )}
             {/* Progress bar at bottom of thumbnail */}
-            {playPos !== null &&
-              video.duration > 0 &&
-              playPos > 0 &&
-              playPos < video.duration - 5 && (
-                <div className="absolute left-0 bottom-0 w-full h-1 bg-black/20 rounded-b-lg overflow-hidden">
-                  <div
-                    className="h-full bg-primary rounded-bl-lg transition-all duration-200"
-                    style={{
-                      width: `${Math.min(
-                        100,
-                        (playPos / video.duration) * 100
-                      )}%`,
-                      height: "4px",
-                    }}
-                  />
-                </div>
-              )}
+            {playPos !== null && video.duration > 0 && playPos > 0 && playPos < video.duration - 5 && (
+              <div className="absolute left-0 bottom-0 w-full h-1 bg-black/20 rounded-b-lg overflow-hidden">
+                <div
+                  className="h-full bg-primary rounded-bl-lg transition-all duration-200"
+                  style={{
+                    width: `${Math.min(100, (playPos / video.duration) * 100)}%`,
+                    height: '4px',
+                  }}
+                />
+              </div>
+            )}
             {isHovered && video.url && (
               <video
                 ref={videoRef}
@@ -144,9 +124,9 @@ export function VideoCard({
                 preload="metadata"
                 onLoadedData={handleVideoLoadedData}
                 className={cn(
-                  "w-full object-cover rounded-lg transition-opacity duration-300",
+                  'w-full object-cover rounded-lg transition-opacity duration-300',
                   aspectRatio,
-                  videoLoaded ? "opacity-100" : "opacity-0 hidden"
+                  videoLoaded ? 'opacity-100' : 'opacity-0 hidden'
                 )}
               />
             )}
@@ -160,15 +140,9 @@ export function VideoCard({
         <div className="pt-3">
           <div className="flex gap-3">
             {!hideAuthor && (
-              <Link
-                to={`/author/${nip19.npubEncode(video.pubkey)}`}
-                className="shrink-0"
-              >
+              <Link to={`/author/${nip19.npubEncode(video.pubkey)}`} className="shrink-0">
                 <Avatar className="h-10 w-10">
-                  <AvatarImage
-                    src={author.data?.metadata?.picture}
-                    alt={name}
-                  />
+                  <AvatarImage src={author.data?.metadata?.picture} alt={name} />
                   <AvatarFallback>{name.charAt(0)}</AvatarFallback>
                 </Avatar>
               </Link>
@@ -201,19 +175,14 @@ export function VideoCard({
 }
 
 interface VideoCardSkeletonProps {
-  format: "vertical" | "horizontal" | "square";
+  format: 'vertical' | 'horizontal' | 'square';
 }
 
 export function VideoCardSkeleton({ format }: VideoCardSkeletonProps) {
-  const aspectRatio =
-    format == "vertical"
-      ? "aspect-[9/16]"
-      : format == "square"
-      ? "aspect-[1/1]"
-      : "aspect-video";
+  const aspectRatio = format == 'vertical' ? 'aspect-[9/16]' : format == 'square' ? 'aspect-[1/1]' : 'aspect-video';
   return (
     <div className="p-0">
-      <Skeleton className={cn("w-full", aspectRatio)} />
+      <Skeleton className={cn('w-full', aspectRatio)} />
       <div className="pt-3">
         <div className="flex gap-3">
           <Skeleton className="h-10 w-10 rounded-full" />

@@ -1,7 +1,7 @@
-import { useNostr } from "@nostrify/react";
-import { useQuery } from "@tanstack/react-query";
-import { useCurrentUser } from "./useCurrentUser";
-import { useAppContext } from "./useAppContext";
+import { useNostr } from '@nostrify/react';
+import { useQuery } from '@tanstack/react-query';
+import { useCurrentUser } from './useCurrentUser';
+import { useAppContext } from './useAppContext';
 
 export function useFollowedAuthors() {
   const { nostr } = useNostr();
@@ -9,7 +9,7 @@ export function useFollowedAuthors() {
   const { config } = useAppContext();
 
   return useQuery<string[]>({
-    queryKey: ["followedAuthors", user?.pubkey],
+    queryKey: ['followedAuthors', user?.pubkey],
     queryFn: async ({ signal }) => {
       if (!user?.pubkey) return [];
 
@@ -30,9 +30,7 @@ export function useFollowedAuthors() {
       if (!events.length) return [];
 
       const contactList = events[0];
-      const followedPubkeys: string[] = contactList.tags
-        .filter((tag) => tag[0] === "p" && tag[1])
-        .map((tag) => tag[1]);
+      const followedPubkeys: string[] = contactList.tags.filter(tag => tag[0] === 'p' && tag[1]).map(tag => tag[1]);
 
       return followedPubkeys;
     },

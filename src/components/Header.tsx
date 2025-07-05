@@ -1,11 +1,11 @@
-import { LoginArea } from "@/components/auth/LoginArea";
-import { Button } from "@/components/ui/button";
-import { ThemeToggle } from "@/components/ThemeToggle";
-import { MenuIcon, Upload } from "lucide-react";
-import { Link } from "react-router-dom";
-import { SearchBar } from "./SearchBar";
-import { useVideoCache } from "@/contexts/VideoCacheContext";
-import { useAppContext } from "@/hooks/useAppContext";
+import { LoginArea } from '@/components/auth/LoginArea';
+import { Button } from '@/components/ui/button';
+import { ThemeToggle } from '@/components/ThemeToggle';
+import { MenuIcon, Upload } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { SearchBar } from './SearchBar';
+import { useVideoCache } from '@/contexts/VideoCacheContext';
+import { useAppContext } from '@/hooks/useAppContext';
 
 export function Header() {
   const { allTags, searchVideos, filterByTags } = useVideoCache();
@@ -13,11 +13,10 @@ export function Header() {
 
   return (
     <header className="border-b sticky top-0 bg-background z-50">
-      <div className={`w-full px-4 h-16 flex items-center justify-between`}
-      >
+      <div className={`w-full px-4 h-16 flex items-center justify-between`}>
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="icon" onClick={toggleSidebar}>
-            <MenuIcon/>
+            <MenuIcon />
           </Button>
           <Link to="/" className="text-xl font-bold">
             nostube

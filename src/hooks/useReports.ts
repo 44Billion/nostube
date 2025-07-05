@@ -24,7 +24,7 @@ export const useReports = ({ p, e, x }: UseReportsParams = {}) => {
 
   return useQuery<ProcessedReportEvent[]>({
     queryKey: ['reports', p, e, x],
-    queryFn: async (c) => {
+    queryFn: async c => {
       const signal = AbortSignal.any([c.signal, AbortSignal.timeout(3000)]);
 
       const filter: NostrFilter = {
@@ -43,7 +43,7 @@ export const useReports = ({ p, e, x }: UseReportsParams = {}) => {
 
       const events = await nostr.query([filter], { signal });
 
-      return events.map((event) => {
+      return events.map(event => {
         const processed: ProcessedReportEvent = {
           justification: event.content,
         };
@@ -71,4 +71,4 @@ export const useReports = ({ p, e, x }: UseReportsParams = {}) => {
     },
     staleTime: Infinity,
   });
-}; 
+};

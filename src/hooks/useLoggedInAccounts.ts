@@ -15,15 +15,14 @@ export function useLoggedInAccounts() {
   const { logins, setLogin, removeLogin } = useNostrLogin();
 
   const { data: authors = [] } = useQuery({
-    queryKey: ['logins', logins.map((l) => l.id).join(';')],
+    queryKey: ['logins', logins.map(l => l.id).join(';')],
     queryFn: async ({ signal }) => {
-      const events = await nostr.query(
-        [{ kinds: [0], authors: logins.map((l) => l.pubkey) }],
-        { signal: AbortSignal.any([signal, AbortSignal.timeout(3000)]) },
-      );
+      const events = await nostr.query([{ kinds: [0], authors: logins.map(l => l.pubkey) }], {
+        signal: AbortSignal.any([signal, AbortSignal.timeout(3000)]),
+      });
 
       return logins.map(({ id, pubkey }): Account => {
-        const event = events.find((e) => e.pubkey === pubkey);
+        const event = events.find(e => e.pubkey === pubkey);
         try {
           const metadata = n.json().pipe(n.metadata()).parse(event?.content);
           return { id, pubkey, metadata, event };
@@ -39,7 +38,7 @@ export function useLoggedInAccounts() {
   const currentUser: Account | undefined = (() => {
     const login = logins[0];
     if (!login) return undefined;
-    const author = authors.find((a) => a.id === login.id);
+    const author = authors.find(a => a.id === login.id);
     return { metadata: {}, ...author, id: login.id, pubkey: login.pubkey };
   })();
 

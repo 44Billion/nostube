@@ -9,7 +9,7 @@ interface NostrProviderProps {
   presetRelays?: { name: string; url: string }[];
 }
 
-const NostrProvider: React.FC<NostrProviderProps> = (props) => {
+const NostrProvider: React.FC<NostrProviderProps> = props => {
   const { children, relayUrl, presetRelays } = props;
 
   const queryClient = useQueryClient();
@@ -40,7 +40,7 @@ const NostrProvider: React.FC<NostrProviderProps> = (props) => {
         const allRelays = new Set<string>([currentRelayUrl.current]);
 
         // Also publish to the preset relays, capped to 5
-        for (const { url } of (presetRelays ?? [])) {
+        for (const { url } of presetRelays ?? []) {
           allRelays.add(url);
 
           if (allRelays.size >= 5) {
@@ -53,11 +53,7 @@ const NostrProvider: React.FC<NostrProviderProps> = (props) => {
     });
   }
 
-  return (
-    <NostrContext.Provider value={{ nostr: pool.current }}>
-      {children}
-    </NostrContext.Provider>
-  );
+  return <NostrContext.Provider value={{ nostr: pool.current }}>{children}</NostrContext.Provider>;
 };
 
 export default NostrProvider;

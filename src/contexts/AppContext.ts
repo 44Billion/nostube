@@ -1,8 +1,8 @@
-import { createContext } from "react";
+import { createContext } from 'react';
 
-export type Theme = "dark" | "light" | "system";
-export type VideoType = "all" | "shorts" | "videos";
-export type BlossomServerTag = "mirror" | "initial upload";
+export type Theme = 'dark' | 'light' | 'system';
+export type VideoType = 'all' | 'shorts' | 'videos';
+export type BlossomServerTag = 'mirror' | 'initial upload';
 
 export interface BlossomServer {
   url: string;

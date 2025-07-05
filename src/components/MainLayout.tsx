@@ -1,7 +1,7 @@
-import { Header } from "@/components/Header";
-import { Outlet } from "react-router-dom";
-import { Sidebar } from "./Sidebar";
-import { useAppContext } from "@/hooks/useAppContext";
+import { Header } from '@/components/Header';
+import { Outlet } from 'react-router-dom';
+import { Sidebar } from './Sidebar';
+import { useAppContext } from '@/hooks/useAppContext';
 
 export function MainLayout() {
   const { isSidebarOpen } = useAppContext();

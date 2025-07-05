@@ -1,13 +1,13 @@
-import { useNostr } from "@nostrify/react";
-import { useQuery } from "@tanstack/react-query";
-import { Link } from "react-router-dom";
-import { useAuthor } from "@/hooks/useAuthor";
-import { processEvent, VideoEvent } from "@/utils/video-event";
-import { getKindsForType, VideoType } from "@/lib/video-types";
-import { NostrEvent } from "@nostrify/nostrify";
-import { formatDistance } from "date-fns";
-import { Skeleton } from "@/components/ui/skeleton";
-import { useReportedPubkeys } from "@/hooks/useReportedPubkeys";
+import { useNostr } from '@nostrify/react';
+import { useQuery } from '@tanstack/react-query';
+import { Link } from 'react-router-dom';
+import { useAuthor } from '@/hooks/useAuthor';
+import { processEvent, VideoEvent } from '@/utils/video-event';
+import { getKindsForType, VideoType } from '@/lib/video-types';
+import { NostrEvent } from '@nostrify/nostrify';
+import { formatDistance } from 'date-fns';
+import { Skeleton } from '@/components/ui/skeleton';
+import { useReportedPubkeys } from '@/hooks/useReportedPubkeys';
 
 function formatDuration(seconds: number): string {
   const hours = Math.floor(seconds / 3600);
@@ -15,11 +15,9 @@ function formatDuration(seconds: number): string {
   const remainingSeconds = seconds % 60;
 
   if (hours > 0) {
-    return `${hours}:${minutes.toString().padStart(2, "0")}:${remainingSeconds
-      .toString()
-      .padStart(2, "0")}`;
+    return `${hours}:${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
   }
-  return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`;
+  return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
 }
 
 function VideoSuggestionItem({ video }: { video: VideoEvent }) {
@@ -31,11 +29,7 @@ function VideoSuggestionItem({ video }: { video: VideoEvent }) {
     <Link to={`/video/${video.link}`}>
       <div className="flex mb-4 hover:bg-accent rounded-lg transition-colors border-none ">
         <div className="relative w-40 h-24 flex-shrink-0">
-          <img
-            src={video.thumb}
-            alt={video.title}
-            className="w-full h-full object-cover rounded-md"
-          />
+          <img src={video.thumb} alt={video.title} className="w-full h-full object-cover rounded-md" />
           {video.duration > 0 && (
             <div className="absolute bottom-1 right-1 bg-black/80 text-white px-1 rounded text-xs">
               {formatDuration(video.duration)}
@@ -48,7 +42,7 @@ function VideoSuggestionItem({ video }: { video: VideoEvent }) {
           <div className="text-xs text-muted-foreground mt-1">
             {formatDistance(new Date(video.created_at * 1000), new Date(), {
               addSuffix: true,
-            })}{" "}
+            })}{' '}
           </div>
         </div>
       </div>
@@ -78,12 +72,7 @@ interface VideoSuggestionsProps {
   currentVideoType?: VideoType;
 }
 
-export function VideoSuggestions({
-  currentVideoId,
-  currentVideoType,
-  relays,
-  authorPubkey,
-}: VideoSuggestionsProps) {
+export function VideoSuggestions({ currentVideoId, currentVideoType, relays, authorPubkey }: VideoSuggestionsProps) {
   const { nostr } = useNostr();
   const blockedPubkeys = useReportedPubkeys();
   const {
@@ -92,17 +81,17 @@ export function VideoSuggestions({
     isPending,
   } = useQuery<VideoEvent[]>({
     enabled: currentVideoId !== undefined && authorPubkey != undefined,
-    queryKey: ["video-suggestions", currentVideoId, authorPubkey],
+    queryKey: ['video-suggestions', currentVideoId, authorPubkey],
     queryFn: async ({ signal }) => {
       let combinedEvents: NostrEvent[] = [];
-      console.log(["video-suggestions", currentVideoId, authorPubkey]);
+      console.log(['video-suggestions', currentVideoId, authorPubkey]);
 
       // 1. Fetch videos from the specific author if provided
       if (authorPubkey) {
         const authorEvents = await nostr.query(
           [
             {
-              kinds: getKindsForType("all"),
+              kinds: getKindsForType('all'),
               authors: [authorPubkey],
               limit: 15, // Limit author-specific videos
             },
@@ -119,9 +108,7 @@ export function VideoSuggestions({
       const generalEvents = await nostr.query(
         [
           {
-            kinds: currentVideoType
-              ? getKindsForType(currentVideoType)
-              : getKindsForType("all"),
+            kinds: currentVideoType ? getKindsForType(currentVideoType) : getKindsForType('all'),
             limit: 30, // Fetch more to allow for filtering
           },
         ],
@@ -136,11 +123,7 @@ export function VideoSuggestions({
       for (const event of combinedEvents) {
         if (blockedPubkeys && blockedPubkeys[event.pubkey]) continue;
         const processed = processEvent(event, relays);
-        if (
-          processed &&
-          processed.id !== currentVideoId &&
-          !seenIds.has(processed.id)
-        ) {
+        if (processed && processed.id !== currentVideoId && !seenIds.has(processed.id)) {
           processedVideos.push(processed);
           seenIds.add(processed.id);
         }
@@ -154,12 +137,8 @@ export function VideoSuggestions({
     /* <ScrollArea className="h-[calc(100vh-4rem)]"> */
     <div className="sm:grid grid-cols-2 gap-4 lg:block">
       {isPending || isLoading
-        ? Array.from({ length: 10 }).map((_, i) => (
-            <VideoSuggestionItemSkeleton key={i} />
-          ))
-        : suggestions.map((video) => (
-            <VideoSuggestionItem key={video.id} video={video} />
-          ))}
+        ? Array.from({ length: 10 }).map((_, i) => <VideoSuggestionItemSkeleton key={i} />)
+        : suggestions.map(video => <VideoSuggestionItem key={video.id} video={video} />)}
     </div>
   );
 }

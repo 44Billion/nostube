@@ -1,8 +1,8 @@
-import { useQuery } from "@tanstack/react-query";
-import { useNostr } from "@nostrify/react";
-import { NostrEvent } from "@nostrify/nostrify";
-import { mergeRelays } from "@/lib/utils";
-import { presetRelays } from "@/App";
+import { useQuery } from '@tanstack/react-query';
+import { useNostr } from '@nostrify/react';
+import { NostrEvent } from '@nostrify/nostrify';
+import { mergeRelays } from '@/lib/utils';
+import { presetRelays } from '@/App';
 
 interface RelayInfo {
   url: string;
@@ -17,10 +17,9 @@ interface RelayInfo {
  */
 export function useUserRelays(pubkey: string | undefined) {
   const { nostr } = useNostr();
-  
 
   return useQuery<RelayInfo[]>({
-    queryKey: ["user-relays", pubkey],
+    queryKey: ['user-relays', pubkey],
     queryFn: async ({ signal }) => {
       if (!pubkey) return [];
 
@@ -32,7 +31,7 @@ export function useUserRelays(pubkey: string | undefined) {
             limit: 1,
           },
         ],
-        { signal, relays: mergeRelays([['wss://purplepag.es'], presetRelays.map(r => r.url)] ) }
+        { signal, relays: mergeRelays([['wss://purplepag.es'], presetRelays.map(r => r.url)]) }
       );
 
       if (events.length === 0) return [];
@@ -41,10 +40,10 @@ export function useUserRelays(pubkey: string | undefined) {
       const relays: RelayInfo[] = [];
 
       for (const tag of relayListEvent.tags) {
-        if (tag[0] === "r" && tag[1]) {
+        if (tag[0] === 'r' && tag[1]) {
           const url = tag[1];
-          const read = tag[2] === "read" || tag[2] === undefined; // Default to read if no marker
-          const write = tag[2] === "write" || tag[2] === undefined; // Default to write if no marker
+          const read = tag[2] === 'read' || tag[2] === undefined; // Default to read if no marker
+          const write = tag[2] === 'write' || tag[2] === undefined; // Default to write if no marker
           relays.push({ url, read, write });
         }
       }

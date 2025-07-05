@@ -1,7 +1,7 @@
-import * as React from "react";
-import { useRef, useEffect, useCallback, useState } from "react";
-import "media-chrome";
-import "hls-video-element";
+import * as React from 'react';
+import { useRef, useEffect, useCallback, useState } from 'react';
+import 'media-chrome';
+import 'hls-video-element';
 
 interface VideoPlayerProps {
   url: string;
@@ -28,10 +28,7 @@ export function VideoPlayer({
   const videoRef = useRef<HTMLVideoElement>(null);
   const [hlsEl, setHlsEl] = useState<HTMLVideoElement | null>(null);
 
-  const isHls = React.useMemo(
-    () => mime === "application/vnd.apple.mpegurl" || url.endsWith(".m3u8"),
-    [mime, url]
-  );
+  const isHls = React.useMemo(() => mime === 'application/vnd.apple.mpegurl' || url.endsWith('.m3u8'), [mime, url]);
 
   // Set initial play position on mount
   useEffect(() => {
@@ -56,23 +53,23 @@ export function VideoPlayer({
       if (!el.paused) return;
       // Assume 30fps for frame step
       const frameStep = 1 / 30;
-      if (e.key === ".") {
+      if (e.key === '.') {
         el.currentTime = Math.min(el.duration, el.currentTime + frameStep);
         e.preventDefault();
-      } else if (e.key === ",") {
+      } else if (e.key === ',') {
         el.currentTime = Math.max(0, el.currentTime - frameStep);
         e.preventDefault();
       }
     }
-    window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener('keydown', handleKeyDown);
     return () => {
-      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener('keydown', handleKeyDown);
     };
   }, [isHls, hlsEl]);
 
   // Ref callback for hls-video custom element
   const hlsRef = useCallback((node: Element | null) => {
-    setHlsEl(node && "currentTime" in node ? (node as HTMLVideoElement) : null);
+    setHlsEl(node && 'currentTime' in node ? (node as HTMLVideoElement) : null);
   }, []);
 
   const handleTimeUpdate = useCallback(() => {
