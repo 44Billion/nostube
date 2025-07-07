@@ -1,4 +1,4 @@
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useLocation } from 'react-router-dom';
 import { useNostr } from '@nostrify/react';
 import { useQuery } from '@tanstack/react-query';
 import { useAuthor } from '@/hooks/useAuthor';
@@ -145,12 +145,13 @@ export function VideoPage() {
   const [shareOpen, setShareOpen] = useState(false);
   const [includeTimestamp, setIncludeTimestamp] = useState(false);
   const [currentPlayPos, setCurrentPlayPos] = useState(0);
+  const location = useLocation();
 
   // Compute initial play position from ?t=... param or localStorage
   const { user } = useCurrentUser();
   const initialPlayPos = useMemo(() => {
     if (typeof window !== 'undefined') {
-      const params = new URLSearchParams(window.location.search);
+      const params = new URLSearchParams(location.search);
       const tRaw = params.get('t');
       const t = parseTimeParam(tRaw);
       if (t > 0) return t;
@@ -167,7 +168,7 @@ export function VideoPage() {
       }
     }
     return 0;
-  }, [user, video]);
+  }, [user, video, location.search]);
 
   // Use the custom hook for debounced play position storage
   useDebouncedPlayPositionStorage(currentPlayPos, user, video?.id);
