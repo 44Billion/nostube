@@ -110,7 +110,7 @@ export function usePlaylists() {
   const createPlaylist = async (name: string, description?: string) => {
     const playlist: Playlist = {
       eventId: undefined,
-      identifier: crypto.randomUUID(),
+      identifier: 'nostube-'+crypto.randomUUID(),
       name,
       description,
       videos: [],
@@ -156,15 +156,19 @@ export function usePlaylists() {
     await updatePlaylist.mutateAsync(updatedPlaylist);
   };
 
-  const deletePlaylist = async (identifier: string) => {
+  const deletePlaylist = async (eventId: string) => {
     if (!user?.pubkey) throw new Error('User not logged in');
 
+    // NIP-9 delete event: kind 5, 'e' tag for eventId, 'k' tag for kind
     await publishEvent({
       event: {
-        kind: PLAYLIST_KIND,
+        kind: 5,
         created_at: nowInSecs(),
-        tags: [['d', identifier]],
-        content: '',
+        tags: [
+          ['e', eventId],
+          ['k', PLAYLIST_KIND.toString()],
+        ],
+        content: 'Deleted by author',
       },
     });
 
@@ -178,5 +182,6 @@ export function usePlaylists() {
     addVideo,
     removeVideo,
     deletePlaylist,
+    updatePlaylist,
   };
 }

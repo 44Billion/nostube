@@ -20,6 +20,18 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { nip19 } from 'nostr-tools';
+import { Pencil } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 
 function formatDate(timestamp: number) {
   return new Date(timestamp * 1000).toLocaleDateString(undefined, {
@@ -64,10 +76,14 @@ function VideoList({ videos, onRemove }: VideoListProps) {
 
 export function PlaylistManager() {
   const { user } = useCurrentUser();
-  const { playlists, isLoading, createPlaylist, deletePlaylist, removeVideo } = usePlaylists();
+  const { playlists, isLoading, createPlaylist, deletePlaylist, removeVideo, updatePlaylist } = usePlaylists();
   const [playlistToDelete, setPlaylistToDelete] = useState<Playlist | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
-  const [isCreatePlaylistDialogOpen, setIsCreatePlaylistDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [playlistToEdit, setPlaylistToEdit] = useState<Playlist | null>(null);
+  const [editName, setEditName] = useState('');
+  const [editDescription, setEditDescription] = useState('');
+  const [isEditing, setIsEditing] = useState(false);
 
   const handleDelete = async () => {
     if (playlistToDelete?.eventId) {
@@ -75,6 +91,31 @@ export function PlaylistManager() {
       await deletePlaylist(playlistToDelete.eventId);
       setPlaylistToDelete(null);
       setIsDeleting(false);
+    }
+  };
+
+  const handleEdit = (playlist: Playlist) => {
+    setPlaylistToEdit(playlist);
+    setEditName(playlist.name);
+    setEditDescription(playlist.description || '');
+    setEditDialogOpen(true);
+  };
+
+  const handleEditSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!playlistToEdit) return;
+    setIsEditing(true);
+    try {
+      // Save changes using update logic
+      await updatePlaylist.mutateAsync({
+        ...playlistToEdit,
+        name: editName,
+        description: editDescription,
+      });
+      setEditDialogOpen(false);
+      setPlaylistToEdit(null);
+    } finally {
+      setIsEditing(false);
     }
   };
 
@@ -120,10 +161,7 @@ export function PlaylistManager() {
     return (
       <div className="space-y-4">
         <div className="flex justify-end">
-          <CreatePlaylistDialog
-            onCreatePlaylist={createPlaylist}
-            onClose={() => setIsCreatePlaylistDialogOpen(false)}
-          />
+          <CreatePlaylistDialog onCreatePlaylist={createPlaylist} onClose={() => {}} />
         </div>
         <Card className="border-dashed">
           <CardContent className="py-12 px-8 text-center">
@@ -141,7 +179,7 @@ export function PlaylistManager() {
   return (
     <div className="space-y-4">
       <div className="flex justify-end">
-        <CreatePlaylistDialog onCreatePlaylist={createPlaylist} onClose={() => setIsCreatePlaylistDialogOpen(false)} />
+        <CreatePlaylistDialog onCreatePlaylist={createPlaylist} onClose={() => {}} />
       </div>
 
       <Accordion type="multiple" className="w-full">
@@ -150,7 +188,22 @@ export function PlaylistManager() {
             <AccordionTrigger className="hover:no-underline">
               <div className="flex-1 flex items-center justify-between mr-4">
                 <div>
-                  <h3 className="text-base font-semibold">{playlist.name}</h3>
+                  <h3 className="text-base font-semibold flex items-center gap-2">
+                    {playlist.name}
+                    {user?.pubkey && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={e => {
+                          e.stopPropagation();
+                          handleEdit(playlist);
+                        }}
+                        aria-label="Edit Playlist"
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </h3>
                   {playlist.description && <p className="text-sm text-muted-foreground">{playlist.description}</p>}
                 </div>
                 <div className="flex items-center space-x-4">
@@ -194,6 +247,39 @@ export function PlaylistManager() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Edit Playlist Dialog */}
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Playlist</DialogTitle>
+            <DialogDescription>Change the name or description of your playlist.</DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleEditSave}>
+            <div className="grid gap-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit-name">Name</Label>
+                <Input id="edit-name" value={editName} onChange={e => setEditName(e.target.value)} required />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-description">Description (optional)</Label>
+                <Textarea
+                  id="edit-description"
+                  value={editDescription}
+                  onChange={e => setEditDescription(e.target.value)}
+                  rows={3}
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button type="submit" disabled={!editName.trim() || isEditing}>
+                {isEditing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Pencil className="mr-2 h-4 w-4" />}
+                Save Changes
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
