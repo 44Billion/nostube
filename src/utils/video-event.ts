@@ -80,7 +80,7 @@ export function processEvent(event: NostrEvent, relays: string[]): VideoEvent | 
       }
     }
 
-    const url = imetaValues.get('url')?.[0];
+    let url = imetaValues.get('url')?.[0];
     const mimeType: string | undefined = imetaValues.get('m')?.[0];
 
     const images: string[] = [];
@@ -106,6 +106,12 @@ export function processEvent(event: NostrEvent, relays: string[]): VideoEvent | 
       const [_, url, lang] = vtt;
       textTracks.push({ url, lang });
     });
+
+    // There are some events that have the whole imeta data in the first string.
+    if (url && url.includes(' ')) {
+      console.warn('URL with space', url, event);
+      [url] = url.split(' ');
+    }
 
     const videoEvent: VideoEvent = {
       id: event.id,
@@ -144,8 +150,14 @@ export function processEvent(event: NostrEvent, relays: string[]): VideoEvent | 
     const duration = parseInt(event.tags.find(t => t[0] === 'duration')?.[1] || '0');
     const identifier = event.tags.find(t => t[0] === 'd')?.[1] || '';
     const tags = event.tags.filter(t => t[0] === 't').map(t => t[1]);
-    const url = event.tags.find(t => t[0] === 'url')?.[1] || '';
+    let url = event.tags.find(t => t[0] === 'url')?.[1] || '';
     const mimeType = event.tags.find(t => t[0] === 'm')?.[1] || '';
+
+    // There are some events that have the whole imeta data in the first string.
+    if (url.includes(' ')) {
+      console.warn('URL with space', url, event);
+      [url] = url.split(' ');
+    }
 
     const videoEvent: VideoEvent = {
       id: event.id,
