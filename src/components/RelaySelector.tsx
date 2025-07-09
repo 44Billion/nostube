@@ -18,14 +18,14 @@ export function RelaySelector(props: RelaySelectorProps) {
   const setSelectedRelay = (relay: string) => {
     updateConfig(current => ({
       ...current,
-      relays: [relay, ...current.relays.filter(r => r !== relay)],
+      relays: [config.relays.find(r => r.url == relay)!, ...current.relays.filter(r => r.url !== relay)],
     }));
   };
 
   const [open, setOpen] = useState(false);
   const [inputValue, setInputValue] = useState('');
 
-  const selectedOption = presetRelays.find(option => option.url === selectedRelay);
+  const selectedOption = presetRelays.find(option => option.url === selectedRelay.url);
 
   // Function to normalize relay URL by adding wss:// if no protocol is present
   const normalizeRelayUrl = (url: string): string => {
@@ -73,7 +73,7 @@ export function RelaySelector(props: RelaySelectorProps) {
               {selectedOption
                 ? selectedOption.name
                 : selectedRelay
-                  ? selectedRelay.replace(/^wss?:\/\//, '')
+                  ? selectedRelay.url?.replace(/^wss?:\/\//, '')
                   : 'Select relay...'}
             </span>
           </div>
@@ -117,7 +117,9 @@ export function RelaySelector(props: RelaySelectorProps) {
                       setInputValue('');
                     }}
                   >
-                    <Check className={cn('mr-2 h-4 w-4', selectedRelay === option.url ? 'opacity-100' : 'opacity-0')} />
+                    <Check
+                      className={cn('mr-2 h-4 w-4', selectedRelay.url === option.url ? 'opacity-100' : 'opacity-0')}
+                    />
                     <div className="flex flex-col">
                       <span className="font-medium">{option.name}</span>
                       <span className="text-xs text-muted-foreground">{option.url}</span>

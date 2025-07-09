@@ -19,7 +19,6 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { CollapsibleText } from '@/components/ui/collapsible-text';
 import { AddToPlaylistButton } from '@/components/AddToPlaylistButton';
 import { useAppContext } from '@/hooks/useAppContext';
-import { mergeRelays } from '@/lib/utils';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import type { NUser } from '@nostrify/react/login';
 import { useVideoCache } from '@/contexts/VideoCacheContext';
@@ -110,9 +109,6 @@ export function VideoPage() {
 
   const { id, relays, author, kind } = nip19.decode(nevent ?? '').data as EventPointer;
 
-  // TODO also use the authors outbox relays
-  const fullRelays = mergeRelays([relays || [], config.relays]);
-
   const { data: video, isLoading } = useQuery<VideoEvent | null>({
     queryKey: ['video', nevent],
     queryFn: async ({ signal }) => {
@@ -134,7 +130,7 @@ export function VideoPage() {
         ],
         {
           signal: AbortSignal.any([signal, AbortSignal.timeout(3000)]),
-          relays: fullRelays,
+          relays: config.relays.filter(r => r.tags.includes('read')).map(r => r.url),
         }
       );
 
@@ -154,7 +150,6 @@ export function VideoPage() {
   useEffect(() => {
     console.log(video);
   }, [video]);
-
 
   const [shareOpen, setShareOpen] = useState(false);
   const [includeTimestamp, setIncludeTimestamp] = useState(false);
@@ -186,14 +181,13 @@ export function VideoPage() {
     return 0;
   }, [user, video, location.search]);
 
-    // Scroll to top when video is loaded
-    useEffect(() => {
-      if (video) {
-        window.scrollTo({ top: 0, behavior: 'instant' });
-      }
-    }, [video, initialPlayPos]);
+  // Scroll to top when video is loaded
+  useEffect(() => {
+    if (video) {
+      window.scrollTo({ top: 0, behavior: 'instant' });
+    }
+  }, [video, initialPlayPos]);
 
-    
   // Use the custom hook for debounced play position storage
   useDebouncedPlayPositionStorage(currentPlayPos, user, video?.id);
 
@@ -381,7 +375,7 @@ export function VideoPage() {
                               tags: [['e', video.id]],
                               created_at: nowInSecs(),
                             },
-                            relays: fullRelays,
+                            relays: config.relays.map(r => r.url),
                           });
                           setShowDeleteDialog(false);
                         }}
@@ -405,7 +399,7 @@ export function VideoPage() {
         <div className="w-full lg:w-96">
           <VideoSuggestions
             currentVideoId={video?.id}
-            relays={fullRelays || []}
+            relays={config.relays.filter(r => r.tags.includes('read')).map(r => r.url) || []}
             authorPubkey={video?.pubkey}
             currentVideoType={video?.type}
           />

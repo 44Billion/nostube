@@ -60,7 +60,7 @@ export function VideoPlayer({
 
     function handleKeyDown(e: KeyboardEvent) {
       if (!el) return;
-      
+
       // Only step if video is paused and present
       if (!el.paused) return;
       // Assume 30fps for frame step

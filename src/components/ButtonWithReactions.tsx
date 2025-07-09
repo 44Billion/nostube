@@ -34,7 +34,7 @@ export function ButtonWithReactions({ eventId, kind, authorPubkey, className }: 
             '#e': [eventId],
           },
         ],
-        { signal, relays: config.relays }
+        { signal, relays: config.relays.filter(r => r.tags.includes('read')).map(r => r.url) }
       );
       return events;
     },

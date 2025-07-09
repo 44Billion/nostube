@@ -16,7 +16,7 @@ export function SubscriptionsPage() {
       setVideoType('all');
       setLikedVideoIds([]);
       setFollowedPubkeys(followedPubkeys);
-      initSearch(config.relays);
+      initSearch(config.relays.filter(r => r.tags.includes('read')).map(r => r.url));
     }
   }, [initSearch, setFollowedPubkeys, followedPubkeys]);
 

@@ -92,7 +92,12 @@ export function getLanguageLabel(lang: string): string {
   if (!lang) return '';
   // Split language and region
   const [language, region] = lang.split(/[-_]/);
-  const entry = langs.where('1', language) || langs.where('2', language) || langs.where('2T', language) || langs.where('2B', language) || langs.where('3', language);
+  const entry =
+    langs.where('1', language) ||
+    langs.where('2', language) ||
+    langs.where('2T', language) ||
+    langs.where('2B', language) ||
+    langs.where('3', language);
   if (!entry) return lang;
   let label = entry.name;
   if (region) {

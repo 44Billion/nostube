@@ -19,7 +19,7 @@ export function Header() {
             <MenuIcon />
           </Button>
           <Link to="/" className="text-xl font-bold flex flex-row gap-2 items-center">
-          <img className='w-8' src="/nostube.svg"></img>
+            <img className="w-8" src="/nostube.svg"></img>
             nostube
           </Link>
         </div>

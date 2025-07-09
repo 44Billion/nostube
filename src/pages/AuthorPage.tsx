@@ -92,6 +92,8 @@ export function AuthorPage() {
 
   const blockedPubkeys = useReportedPubkeys();
 
+  const readRelays = config.relays.filter(r => r.tags.includes('read')).map(r => r.url);
+
   // Query for author's videos
   const { data: allVideos = [], isLoading: isLoadingVideos } = useQuery({
     queryKey: ['author-videos', pubkey],
@@ -108,14 +110,14 @@ export function AuthorPage() {
         ],
         {
           signal: AbortSignal.any([signal, AbortSignal.timeout(3000)]),
-          relays: config.relays,
+          relays: readRelays,
         }
       );
 
       const allEvents = events.flat();
       const uniqueEvents = Array.from(new Map(allEvents.map(event => [event.id, event])).values());
 
-      return processEvents(Array.from(uniqueEvents.values()), config.relays, blockedPubkeys);
+      return processEvents(Array.from(uniqueEvents.values()), readRelays, blockedPubkeys);
     },
     enabled: !!pubkey && blockedPubkeys !== undefined,
   });

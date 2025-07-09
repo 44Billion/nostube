@@ -112,7 +112,8 @@ export function processEvent(event: NostrEvent, relays: string[]): VideoEvent | 
       kind: event.kind,
       title: event.tags.find(t => t[0] === 'title')?.[1] || alt,
       description: event.content || '',
-      images: images.length > 0 ? images : [(url ? `${videoThumbService}/${url}` : '') || blurHashToDataURL(blurhash) || ''],
+      images:
+        images.length > 0 ? images : [(url ? `${videoThumbService}/${url}` : '') || blurHashToDataURL(blurhash) || ''],
       pubkey: event.pubkey,
       created_at: event.created_at,
       duration,

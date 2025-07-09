@@ -24,7 +24,7 @@ export function HomePage() {
       setVideoType('videos');
       setFollowedPubkeys([]);
       setLikedVideoIds([]);
-      initSearch(config.relays);
+      initSearch(config.relays.filter(r => r.tags.includes('read')).map(r => r.url));
     }
   }, [config.relays, isWorkerReady]);
 

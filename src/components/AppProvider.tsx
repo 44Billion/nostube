@@ -1,9 +1,9 @@
 import { ReactNode, useState, useCallback, useEffect } from 'react';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
-import { AppContext, type AppConfig, type AppContextType } from '@/contexts/AppContext';
+import { AppContext, Relay, type AppConfig, type AppContextType } from '@/contexts/AppContext';
 import { useUserRelays } from '@/hooks/useUserRelays';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
-import { formatBlobUrl, mergeRelays } from '@/lib/utils';
+import { formatBlobUrl } from '@/lib/utils';
 
 interface AppProviderProps {
   children: ReactNode;
@@ -12,7 +12,7 @@ interface AppProviderProps {
   /** Default app configuration */
   defaultConfig: AppConfig;
   /** Optional list of preset relays to display in the RelaySelector */
-  presetRelays?: { name: string; url: string }[];
+  presetRelays?: Relay[];
 }
 
 export function AppProvider(props: AppProviderProps) {
@@ -45,7 +45,10 @@ export function AppProvider(props: AppProviderProps) {
       console.log([config.relays || [], userRelays.data.map(r => r.url)]);
       setConfig({
         ...config,
-        relays: mergeRelays([config.relays || [], userRelays.data.map(r => r.url)]),
+        relays: [
+          ...(config.relays || []),
+          ...userRelays.data.map(r => ({ url: r.url, name: r.url, tags: ['read'] } as Relay)),
+        ],
       });
     }
   }, [userRelays.data]);
@@ -67,6 +70,17 @@ export function AppProvider(props: AppProviderProps) {
       });
     }
   }, [config.blossomServers]);
+
+  // MIGRATION: add tags to relays
+  useEffect(() => {
+    if (Array.isArray(config.relays) && config.relays.length > 0) {
+      const tagsMissing = config.relays.filter(r => r.tags == undefined).length;
+      if (tagsMissing) {
+        // Add tags where missing
+        setConfig({ ...config, relays: config.relays.map(r => ({ ...r, tags: r.tags || [] })) });
+      }
+    }
+  }, [config.relays]);
 
   const appContextValue: AppContextType = {
     config,

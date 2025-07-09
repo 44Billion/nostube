@@ -14,7 +14,7 @@ export function ShortsPage() {
     setVideoType('shorts');
     setFollowedPubkeys([]);
     setLikedVideoIds([]);
-    initSearch(config.relays);
+    initSearch(config.relays.filter(r => r.tags.includes('read')).map(r => r.url));
   }, []);
 
   return (

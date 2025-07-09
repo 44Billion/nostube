@@ -6,7 +6,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { Suspense } from 'react';
 import { AppProvider } from '@/components/AppProvider';
-import { AppConfig } from '@/contexts/AppContext';
+import { AppConfig, Relay } from '@/contexts/AppContext';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { VideoCacheProvider } from '@/contexts/VideoCacheContext';
 
@@ -20,19 +20,19 @@ const queryClient = new QueryClient({
   },
 });
 
-export const presetRelays = [
-  { url: 'wss://ditto.pub/relay', name: 'Ditto' },
-  { url: 'wss://relay.nostr.band', name: 'Nostr.Band' },
-  { url: 'wss://relay.damus.io', name: 'Damus' },
-  { url: 'wss://relay.primal.net', name: 'Primal' },
-  { url: 'wss://nos.lol/', name: 'nos.lol' },
+export const presetRelays: Relay[] = [
+  { url: 'wss://ditto.pub/relay', name: 'Ditto', tags: ['read'] },
+  { url: 'wss://relay.nostr.band', name: 'Nostr.Band', tags: ['read'] },
+  { url: 'wss://relay.damus.io', name: 'Damus', tags: ['read'] },
+  { url: 'wss://relay.primal.net', name: 'Primal', tags: ['read'] },
+  { url: 'wss://nos.lol/', name: 'nos.lol', tags: ['read'] },
 ];
 
 const presetBlossomServers: BlossomServer[] = [];
 
 const defaultConfig: AppConfig = {
   theme: 'dark',
-  relays: presetRelays.map(r => r.url),
+  relays: presetRelays,
   videoType: 'videos',
   blossomServers: [...presetBlossomServers],
 };
@@ -43,7 +43,7 @@ export function App() {
       <QueryClientProvider client={queryClient}>
         {process.env.NODE_ENV === 'development' && <ReactQueryDevtools initialIsOpen={false} />}
         <NostrLoginProvider storageKey="nostr:login">
-          <NostrProvider relayUrl={defaultConfig.relays[0]} presetRelays={presetRelays}>
+          <NostrProvider relayUrl={defaultConfig.relays[0].url} presetRelays={presetRelays}>
             <AppProvider storageKey="nostr:app-config" defaultConfig={defaultConfig} presetRelays={presetRelays}>
               <VideoCacheProvider>
                 <TooltipProvider>

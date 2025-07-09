@@ -23,7 +23,7 @@ export function useFollowedAuthors() {
         ],
         {
           signal: AbortSignal.any([signal, AbortSignal.timeout(3000)]),
-          relays: config.relays,
+          relays: config.relays.filter(r => r.tags.includes('read')).map(r => r.url),
         }
       );
 

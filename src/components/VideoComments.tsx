@@ -124,7 +124,7 @@ export function VideoComments({ videoId, link, authorPubkey }: VideoCommentsProp
             limit: 100,
           },
         ],
-        { signal, relays: config.relays }
+        { signal, relays: config.relays.filter(r => r.tags.includes('read')).map(r => r.url) }
       );
       return events.sort((a, b) => b.created_at - a.created_at).map(mapEventToComment);
     },

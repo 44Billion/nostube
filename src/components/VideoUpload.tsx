@@ -140,7 +140,7 @@ export function VideoUpload() {
     */
 
       publish(
-        { event, relays: ['wss://haven.slidestr.net'] },
+        { event, relays: config.relays.filter(r => r.tags.includes('write')).map(r => r.url) },
         {
           onSuccess: (publishedEvent, vars) => {
             navigate(

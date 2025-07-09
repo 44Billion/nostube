@@ -3,6 +3,7 @@ import { useNostr } from '@nostrify/react';
 import { useCurrentUser } from './useCurrentUser';
 import { useNostrPublish } from './useNostrPublish';
 import { nowInSecs } from '@/lib/utils';
+import { useAppContext } from './useAppContext';
 
 export interface Video {
   id: string;
@@ -27,6 +28,7 @@ export function usePlaylists() {
   const { user } = useCurrentUser();
   const { mutate: publishEvent } = useNostrPublish();
   const queryClient = useQueryClient();
+  const { config } = useAppContext();
 
   const query = useQuery({
     queryKey: ['playlists', user?.pubkey],
@@ -110,7 +112,7 @@ export function usePlaylists() {
   const createPlaylist = async (name: string, description?: string) => {
     const playlist: Playlist = {
       eventId: undefined,
-      identifier: 'nostube-'+crypto.randomUUID(),
+      identifier: 'nostube-' + crypto.randomUUID(),
       name,
       description,
       videos: [],
@@ -170,6 +172,7 @@ export function usePlaylists() {
         ],
         content: 'Deleted by author',
       },
+      relays: config.relays.map(r => r.url),
     });
 
     queryClient.invalidateQueries({ queryKey: ['playlists', user?.pubkey] });

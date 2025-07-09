@@ -21,7 +21,7 @@ export function LikedVideosPage() {
     if (likedEventIds.length > 0) {
       setVideoType('all');
       setLikedVideoIds(likedEventIds);
-      initSearch(config.relays);
+      initSearch(config.relays.filter(r => r.tags.includes('read')).map(r => r.url));
     }
 
     // When navigating away, we might want to reset the filters, but for now,
