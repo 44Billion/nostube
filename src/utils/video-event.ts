@@ -110,7 +110,7 @@ export function processEvent(event: NostrEvent, relays: string[]): VideoEvent | 
     // There are some events that have the whole imeta data in the first string.
     if (url && url.includes(' ')) {
       console.warn('URL with space', url, event);
-      [url] = url.split(' ');
+      url = url.split(' ')[0];
     }
 
     const videoEvent: VideoEvent = {
@@ -156,7 +156,7 @@ export function processEvent(event: NostrEvent, relays: string[]): VideoEvent | 
     // There are some events that have the whole imeta data in the first string.
     if (url.includes(' ')) {
       console.warn('URL with space', url, event);
-      [url] = url.split(' ');
+      url = url.split(' ')[0];
     }
 
     const videoEvent: VideoEvent = {
