@@ -30,7 +30,7 @@ interface AuthorStats {
 
 type Tabs = 'videos' | 'shorts' | 'tags';
 
-function AuthorProfile({ pubkey }: { pubkey: string }) {
+function AuthorProfile({ pubkey, joinedDate }: { pubkey: string; joinedDate: Date }) {
   const { data: metadata, isLoading } = useAuthor(pubkey);
 
   if (isLoading) {
@@ -50,7 +50,7 @@ function AuthorProfile({ pubkey }: { pubkey: string }) {
   const name = author?.name || pubkey.slice(0, 8);
 
   return (
-    <div className="flex items-start gap-6">
+    <div className="flex  items-start gap-6">
       <Avatar className="h-32 w-32">
         <AvatarImage src={author?.picture} />
         <AvatarFallback className="text-4xl">{name[0]}</AvatarFallback>
@@ -79,6 +79,10 @@ function AuthorProfile({ pubkey }: { pubkey: string }) {
               Website
             </a>
           )}
+          <div className="text-sm">
+            <span className="text-muted-foreground">Joined</span>
+            <span className="ml-2">{formatDistanceToNow(joinedDate, { addSuffix: true })}</span>
+          </div>
         </div>
       </div>
     </div>
@@ -153,13 +157,6 @@ export function AuthorPage() {
     enabled: !!pubkey && blockedPubkeys !== undefined,
   });
 
-  // Get author stats
-  const stats: AuthorStats = {
-    videoCount: allVideos.length,
-    totalViews: 0, // Could be implemented with NIP-78 view counts
-    joinedDate: allVideos.length > 0 ? new Date(Math.min(...allVideos.map(v => v.created_at * 1000))) : new Date(),
-  };
-
   // Get unique tags from all videos
   const uniqueTags = useMemo(
     () =>
@@ -196,26 +193,22 @@ export function AuthorPage() {
     };
   }, [authorName]);
 
+  // Get author stats
+  const stats: AuthorStats = {
+    videoCount: allVideos.length,
+    totalViews: 0, // Could be implemented with NIP-78 view counts
+    joinedDate: allVideos.length > 0 ? new Date(Math.min(...allVideos.map(v => v.created_at * 1000))) : new Date(),
+  };
+
   if (!pubkey) return null;
 
   return (
     <div className="sm:p-4">
       <Card>
         <CardHeader className="border-b">
-          <AuthorProfile pubkey={pubkey} />
+          <AuthorProfile pubkey={pubkey} joinedDate={stats.joinedDate} />
         </CardHeader>
         <CardContent className="p-6">
-          <div className="flex items-center gap-6 mb-6 text-sm">
-            <div>
-              <span className="font-semibold">{stats.videoCount}</span>
-              <span className="text-muted-foreground ml-2">videos</span>
-            </div>
-            <div>
-              <span className="text-muted-foreground">Joined</span>
-              <span className="ml-2">{formatDistanceToNow(stats.joinedDate, { addSuffix: true })}</span>
-            </div>
-          </div>
-
           <Tabs value={activeTab} onValueChange={v => setActiveTab(v as Tabs)}>
             <TabsList>
               {videos.length > 0 && (

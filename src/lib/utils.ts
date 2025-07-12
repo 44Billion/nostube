@@ -122,8 +122,8 @@ export function getLanguageLabel(lang: string): string {
 }
 
 export const imageProxy = (url?: string) => {
-  return `https://images.slidestr.net/insecure/f:webp/rs:fill:80:80/plain/${url}`;
+  return `https://images.slidestr.net/insecure/f:webp/rs:fill:80:80/plain/${encodeURIComponent(url)}`;
 };
 export const imageProxyVideoPreview = (url?: string) => {
-  return `https://images.slidestr.net/insecure/f:webp/rs:fill:320:320/plain/${url}`;
+  return `https://images.slidestr.net/insecure/f:webp/rs:fill:480:480/plain/${encodeURIComponent(url)}`;
 };

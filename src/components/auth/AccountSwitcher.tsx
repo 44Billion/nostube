@@ -33,7 +33,7 @@ export function AccountSwitcher({ onAddAccountClick }: AccountSwitcherProps) {
       <DropdownMenuTrigger asChild>
         <button className="flex items-center gap-2 py-1 px-3 rounded-full hover:bg-accent transition-all w-full text-foreground">
           <Avatar className="w-10 h-10">
-          <AvatarImage src={imageProxy(currentUser.metadata.picture)} alt={getDisplayName(currentUser)} />
+            <AvatarImage src={imageProxy(currentUser.metadata.picture)} alt={getDisplayName(currentUser)} />
             <AvatarFallback>{getDisplayName(currentUser).charAt(0)}</AvatarFallback>
           </Avatar>
           <div className="flex-1 text-left hidden md:block truncate">

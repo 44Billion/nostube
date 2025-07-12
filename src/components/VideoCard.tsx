@@ -5,7 +5,7 @@ import { VideoEvent } from '@/utils/video-event';
 import { nip19 } from 'nostr-tools';
 import { formatDuration } from '../lib/formatDuration';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { cn, imageProxy } from '@/lib/utils';
+import { cn, imageProxy, imageProxyVideoPreview } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
 import React, { useRef, useState } from 'react';
 import { PlayProgressBar } from './PlayProgressBar';
@@ -63,9 +63,10 @@ export function VideoCard({ video, hideAuthor, format = 'square' }: VideoCardPro
         <Link to={`/video/${video.link}`}>
           <div className="w-full overflow-hidden rounded-lg relative">
             <img
-              src={video.images[0]}
+              src={imageProxyVideoPreview(video.images[0])}
+              loading="lazy"
               alt={video.title}
-              referrerPolicy='no-referrer'
+              referrerPolicy="no-referrer"
               className={cn(
                 video.contentWarning ? 'blur-lg' : '',
                 'w-full object-cover transition-opacity duration-300',
@@ -112,10 +113,7 @@ export function VideoCard({ video, hideAuthor, format = 'square' }: VideoCardPro
             {!hideAuthor && (
               <Link to={`/author/${nip19.npubEncode(video.pubkey)}`} className="shrink-0">
                 <Avatar className="h-10 w-10">
-                  <AvatarImage
-                    src={imageProxy(author.data?.metadata?.picture)}
-                    alt={name}
-                  />
+                  <AvatarImage src={imageProxy(author.data?.metadata?.picture)} alt={name} />
                   <AvatarFallback>{name.charAt(0)}</AvatarFallback>
                 </Avatar>
               </Link>
@@ -134,7 +132,7 @@ export function VideoCard({ video, hideAuthor, format = 'square' }: VideoCardPro
                 </Link>
               )}
 
-              <div className="text-sm text-muted-foreground">
+              <div className="text-xs text-muted-foreground">
                 {formatDistance(new Date(video.created_at * 1000), new Date(), {
                   addSuffix: true,
                 })}

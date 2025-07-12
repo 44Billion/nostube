@@ -18,6 +18,7 @@ import * as MP4Box from 'mp4box';
 import type { Movie } from 'mp4box';
 import { nip19 } from 'nostr-tools';
 import { buildAdvancedMimeType, formatBlobUrl, nowInSecs } from '@/lib/utils';
+import { Checkbox } from './ui/checkbox';
 
 export function VideoUpload() {
   const [title, setTitle] = useState('');
@@ -768,11 +769,12 @@ export function VideoUpload() {
                 )}
                 {/* Content warning option */}
                 <div className="flex items-center gap-2 mt-4">
-                  <input
-                    type="checkbox"
+                  <Checkbox
                     id="content-warning"
+                    defaultChecked={false}
+                    required={true}
                     checked={contentWarningEnabled}
-                    onChange={e => setContentWarningEnabled(e.target.checked)}
+                    onCheckedChange={e => setContentWarningEnabled(e as boolean)}
                   />
                   <Label htmlFor="content-warning">Mark as NSFW / add content warning</Label>
                 </div>
