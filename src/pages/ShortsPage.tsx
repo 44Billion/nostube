@@ -1,25 +1,45 @@
+import React, { useEffect, useState, useMemo } from 'react';
 import { Loader2 } from 'lucide-react';
 import { VideoGrid } from '@/components/VideoGrid';
 import { useInView } from 'react-intersection-observer';
-import { useEffect, useMemo } from 'react';
 import { useInfiniteTimeline } from '@/nostr/useInfiniteTimeline';
 import { videoTypeLoader } from '@/nostr/loaders';
+import { TimelineLoader } from 'applesauce-loaders/loaders';
+import { useAppContext } from '@/hooks/useAppContext';
 
 export function ShortsPage() {
-  // Choose loader for shorts
-  const getLoader = useMemo(() => {
-    return () => videoTypeLoader('shorts')();
-  }, []);
+  const { config } = useAppContext();
+  const relays = useMemo(() => config.relays.filter(r => r.tags.includes('read')).map(r => r.url), [config.relays]);
+  const [loader, setLoader] = useState<TimelineLoader | undefined>();
 
-  const { videos, loading, exhausted, loadMore, reset } = useInfiniteTimeline(getLoader);
-  
-  // Load shorts timeline when component mounts
   useEffect(() => {
+    try {
+      const newLoader = videoTypeLoader('shorts', relays);
+      console.log('Shorts.newLoader =', newLoader);
+      setLoader(newLoader);
+    } catch (error) {
+      console.error('Error creating shorts loader:', error);
+      setLoader(undefined);
+    }
+  }, [relays]);
+
+  console.log('Shorts.loader =', loader);
+  const { videos, loading, exhausted, loadMore, reset } = useInfiniteTimeline(loader, relays);
+  
+  // Load shorts timeline when component mounts or when route changes to this page
+  useEffect(() => {
+    if (!loader) {
+      console.log('Shorts: loader not ready yet');
+      return;
+    }
     reset();
+    console.log('Shorts.reset called');
     // auto-load first page
     const unsub = loadMore();
-    return () => { if (typeof unsub === "function") unsub(); };
-  }, []); // Empty dependency array - only run once on mount
+    return () => {
+      if (typeof unsub === 'function') unsub();
+    };
+  }, [loader, reset, loadMore]); // Reset when loader changes
 
   // Intersection observer for infinite loading
   const { ref: loadMoreRef, inView } = useInView({
@@ -28,11 +48,11 @@ export function ShortsPage() {
   });
 
   // Trigger load more when in view
-  useEffect(() => {
+  React.useEffect(() => {
     if (inView && !exhausted && !loading) {
-      // loadMore();
+      loadMore();
     }
-  }, [inView, exhausted, loading, loadMore]);
+  }, [inView, exhausted, loadMore]);
 
   return (
     <div className="sm:px-4 sm:py-6">

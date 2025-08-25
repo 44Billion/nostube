@@ -3,9 +3,9 @@ import { Subject } from "rxjs";
 import { finalize, takeUntil, tap } from "rxjs/operators";
 import { processEvents } from '@/utils/video-event';
 import { useReportedPubkeys } from '@/hooks/useReportedPubkeys';
-import { useAppContext } from '@/hooks/useAppContext';
-import { mapEventsToStore } from "applesauce-core";
-import { eventStore, storeEventInIDB } from './core';
+
+import { TimelineLoader } from "applesauce-loaders/loaders";
+import { storeEventInIDB } from "./core";
 
 // Minimales Event - muss mit der processEvents Funktion kompatibel sein
 export type NEvent = {
@@ -18,34 +18,27 @@ export type NEvent = {
   sig: string; // Required by processEvents
 };
 
-// LoaderFn: applesauce-Loader, der ein Observable<NEvent> zurückgibt
-type LoaderFn = () => import('rxjs').Observable<NEvent>;
-
-export function useInfiniteTimeline(getLoader: LoaderFn) {
+export function useInfiniteTimeline(loader?: TimelineLoader, readRelays: string[] = []) {
   const [events, setEvents] = useState<NEvent[]>([]);
   const [loading, setLoading] = useState(false);
   const [exhausted, setExhausted] = useState(false);
   const blockedPubkeys = useReportedPubkeys();
-  const { config } = useAppContext();
 
-  // Get read relays from user config
-  const readRelays = useMemo(() => 
-    config.relays.filter(r => r.tags.includes('read')).map(r => r.url),
-    [config.relays]
-  );
 
   // Abort-Signale pro „Page Load"
   const pageAbort$ = useRef(new Subject<void>());
 
   const loadMore = useCallback(() => {
-    if (loading || exhausted) return;
+    if (loading || exhausted || !loader) {
+      console.log('loadMore: early return - loading:', loading, 'exhausted:', exhausted, 'loader:', !!loader);
+      return;
+    }
     setLoading(true);
 
-    // applesauce-Loader ist bereits ein Observable -> direkt RxJS-Operators
-    const sub = getLoader()
+    // The loader is a function that returns an observable
+    const sub = loader()
       .pipe(
         takeUntil(pageAbort$.current), // cancel falls Komponente wechselt/unmountet
-        mapEventsToStore(eventStore), // Events automatisch in EventStore speichern
         tap(async (event) => {
           // Manuell in IDB speichern für zusätzliche Persistenz
           try {
@@ -58,19 +51,22 @@ export function useInfiniteTimeline(getLoader: LoaderFn) {
       )
       .subscribe({
         next: (e) => {
+          console.log('Event received:', e.id, e.kind, e.content.slice(0, 50));
           setEvents(prev => (prev.some(x => x.id === e.id) ? prev : [...prev, e]));
         },
         complete: () => {
+          console.log('Loader completed');
           // Simple Heuristik: nichts Neues? -> eventuell „am Ende"
           setExhausted(prev => prev || false /* hier ggf. besseres Signal vom Loader nutzen */);
         },
-        error: (_err) => {
+        error: (err) => {
+          console.log('Loader error:', err);
           // Fehler beendet diesen Page-Load, aber wir lassen die Liste stehen
         }
       });
 
-    return () => sub.unsubscribe();
-  }, [loading, exhausted, getLoader]);
+    return () => { console.log("unsubscribe"); sub.unsubscribe(); }
+  }, [loading, exhausted, loader, readRelays]); // Include readRelays for relay updates
 
   // Reset (z. B. beim Filterwechsel)
   const reset = useCallback(() => {

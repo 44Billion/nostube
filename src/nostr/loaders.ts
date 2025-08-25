@@ -19,13 +19,13 @@ export const authorVideoLoader = (pubkey: string) =>
   getTimelineLoader(`k21:author:${pubkey}`, { kinds: getKindsForType('all'), authors: [pubkey] });
 
 // By video type
-export const videoTypeLoader = (type: VideoType) =>
-  getTimelineLoader(`k21:type:${type}`, { kinds: getKindsForType(type) });
+export const videoTypeLoader = (type: VideoType, relays?: string[]) => () =>
+  getTimelineLoader(`k21:type:${type}`, { kinds: getKindsForType(type) }, relays);
 
 // By video type and author
-export const authorVideoTypeLoader = (type: VideoType, pubkey: string) =>
+export const authorVideoTypeLoader = (type: VideoType, pubkey: string) => () =>
   getTimelineLoader(`k21:type:${type}:author:${pubkey}`, { kinds: getKindsForType(type), authors: [pubkey] });
 
 // Example: by hashtag/topic
-export const tagVideoLoader = (tag: string) =>
+export const tagVideoLoader = (tag: string) => () =>
   getTimelineLoader(`k21:tag:${tag}`, { kinds: getKindsForType('all'), "#t": [tag] });
