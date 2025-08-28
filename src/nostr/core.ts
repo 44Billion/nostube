@@ -71,7 +71,7 @@ export function getTimelineLoader(key: FilterKey, baseFilters: Filter, relays: s
     cache: cacheRequest, // cache-first
     limit: 50,
   });
-  console.log('getTimelineLoader', key, loader);
+  console.log('getTimelineLoader: created new loader for', key, loader);
   // loaderMemo.set(key, loader);
   return loader;
 }

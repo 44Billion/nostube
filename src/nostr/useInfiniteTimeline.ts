@@ -24,7 +24,6 @@ export function useInfiniteTimeline(loader?: TimelineLoader, readRelays: string[
   const [exhausted, setExhausted] = useState(false);
   const blockedPubkeys = useReportedPubkeys();
 
-
   // Abort-Signale pro „Page Load"
   const pageAbort$ = useRef(new Subject<void>());
 
