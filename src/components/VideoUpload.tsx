@@ -628,7 +628,6 @@ export function VideoUpload() {
                   id="description"
                   value={description}
                   onChange={e => setDescription(e.target.value)}
-                  required
                 />
               </div>
 
@@ -763,7 +762,7 @@ export function VideoUpload() {
                   <Checkbox
                     id="content-warning"
                     defaultChecked={false}
-                    required={true}
+                    required={false}
                     checked={contentWarningEnabled}
                     onCheckedChange={e => setContentWarningEnabled(e as boolean)}
                   />
@@ -794,7 +793,6 @@ export function VideoUpload() {
               !uploadInfo.uploadedBlobs ||
               uploadInfo.uploadedBlobs.length === 0 ||
               !title ||
-              !description ||
               !thumbnailSource ||
               !thumbnailBlob
             }
