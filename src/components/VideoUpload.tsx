@@ -65,8 +65,11 @@ export function VideoUpload() {
     if (inputMethod === 'file' && (!file || !blossomInitalUploadServers)) return;
     if (inputMethod === 'url' && !videoUrl) return;
 
-    // Determine which thumbnail to use
+    // Determine which thumbnail to use and upload if needed
     let thumbnailFile: File | null = null;
+    let thumbnailUploadedBlobs: BlobDescriptor[] = [];
+    let thumbnailMirroredBlobs: BlobDescriptor[] = [];
+
     if (thumbnailSource === 'generated') {
       if (!thumbnailBlob) return;
       // Convert Blob to File for upload
@@ -74,9 +77,33 @@ export function VideoUpload() {
         type: thumbnailBlob.type || 'image/jpeg',
         lastModified: Date.now(),
       });
+      
+      // Upload generated thumbnail to Blossom servers
+      try {
+        thumbnailUploadedBlobs = await uploadFileToMultipleServers({
+          file: thumbnailFile,
+          servers: blossomInitalUploadServers!.map(server => server.url),
+          signer: async draft => await user.signer.signEvent(draft),
+        });
+        
+        // Mirror to mirror servers
+        if (blossomMirrorServers && blossomMirrorServers.length > 0 && thumbnailUploadedBlobs[0]) {
+          thumbnailMirroredBlobs = await mirrorBlobsToServers({
+            mirrorServers: blossomMirrorServers.map(s => s.url),
+            blob: thumbnailUploadedBlobs[0],
+            signer: async draft => await user.signer.signEvent(draft),
+          });
+        }
+      } catch (error) {
+        console.error('Failed to upload generated thumbnail:', error);
+        throw new Error('Failed to upload generated thumbnail');
+      }
     } else {
       if (!thumbnail) return;
       thumbnailFile = thumbnail;
+      // Use already uploaded thumbnail blobs
+      thumbnailUploadedBlobs = thumbnailUploadInfo.uploadedBlobs;
+      thumbnailMirroredBlobs = thumbnailUploadInfo.mirroredBlobs;
     }
 
     if (inputMethod === 'file' && (!file || !(file instanceof File))) throw new Error('No valid video file selected');
@@ -104,8 +131,8 @@ export function VideoUpload() {
         imetaTag.push(`m video/mp4`);
       }
 
-      thumbnailUploadInfo.uploadedBlobs.forEach(blob => imetaTag.push(`image ${blob.url}`));
-      thumbnailUploadInfo.mirroredBlobs.forEach(blob => imetaTag.push(`image ${blob.url}`));
+      thumbnailUploadedBlobs.forEach(blob => imetaTag.push(`image ${blob.url}`));
+      thumbnailMirroredBlobs.forEach(blob => imetaTag.push(`image ${blob.url}`));
 
       // Only add fallback URLs for uploaded files
       if (inputMethod === 'file') {
@@ -502,7 +529,6 @@ export function VideoUpload() {
     }
 
     if (currentVideoUrl) {
-      setThumbnailBlob(null); // reset before generating new
       createThumbnailFromUrl(currentVideoUrl, 1)
         .then(blob => {
           if (blob) {
@@ -676,6 +702,12 @@ export function VideoUpload() {
                           <div className="col-span-2 mt-2 text-sm text-yellow-700 bg-yellow-100 border border-yellow-300 rounded p-2">
                             <b>Warning:</b> VP9 videos (<code>vp09</code>) are not supported on iOS or Safari browsers.
                             For maximum compatibility, use H.264/AVC.
+                          </div>
+                        )}
+                        {uploadInfo.videoCodec.startsWith('hev1') && (
+                          <div className="col-span-2 mt-2 text-sm text-yellow-700 bg-yellow-100 border border-yellow-300 rounded p-2">
+                            <b>Warning:</b> While H.265 (<code>hev1</code>) is widely supported, this video will not play on iOS/Apple devices.
+                            A <code>hvc1</code> codec identifier is needed.
                           </div>
                         )}
                         {uploadInfo.videoCodec.startsWith('hvc1') && (
@@ -892,7 +924,8 @@ export function VideoUpload() {
               (inputMethod === 'url' && !uploadInfo.videoUrl) ||
               !title ||
               !thumbnailSource ||
-              !thumbnailBlob
+              (thumbnailSource === 'generated' && !thumbnailBlob) ||
+              (thumbnailSource === 'upload' && (!thumbnailUploadInfo.uploadedBlobs || thumbnailUploadInfo.uploadedBlobs.length === 0))
             }
           >
             Publish video

@@ -125,14 +125,14 @@ export const imageProxy = (url?: string) => {
   if (!url) return '';
   // Check for data URLs and return them immediately
   if (url.startsWith('data:')) return url;
-  return `http://127.0.0.1:8081/insecure/f:webp/rs:fill:80:80/plain/${encodeURIComponent(url)}`;
+  return `https://nostube-imgproxy.apps3.slidestr.net/insecure/f:webp/rs:fill:80:80/plain/${encodeURIComponent(url)}`;
 };
 
 export const imageProxyVideoPreview = (url?: string) => {
   if (!url) return '';
   // Check for data URLs and return them immediately
   if (url.startsWith('data:')) return url;
-  return `http://127.0.0.1:8081/insecure/f:webp/rs:fit:480:480/plain/${encodeURIComponent(url)}`;
+  return `https://nostube-imgproxy.apps3.slidestr.net/insecure/f:webp/rs:fit:480:480/plain/${encodeURIComponent(url)}`;
 };
 
 function bigIntHash(str: string): string {

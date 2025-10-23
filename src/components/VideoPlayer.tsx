@@ -3,9 +3,10 @@ import { useRef, useEffect, useCallback, useState } from 'react';
 import 'media-chrome';
 import 'hls-video-element';
 import { TextTrack } from '@/utils/video-event';
-import { getLanguageLabel, imageProxyVideoPreview, isVideoUrl } from '@/lib/utils';
+import { getLanguageLabel, imageProxyVideoPreview } from '@/lib/utils';
 import 'media-chrome/menu';
 import '@/types/media-chrome.d.ts';
+import { Loader2 } from 'lucide-react';
 
 interface VideoPlayerProps {
   urls: string[];
@@ -36,6 +37,8 @@ export function VideoPlayer({
   const [currentUrlIndex, setCurrentUrlIndex] = useState(0);
   const [allFailed, setAllFailed] = useState(false);
   const [triedHead, setTriedHead] = useState(false);
+  const [showSpinner, setShowSpinner] = useState(false);
+  const spinnerTimeoutRef = useRef<number | null>(null);
 
   const isHls = React.useMemo(
     () => mime === 'application/vnd.apple.mpegurl' || urls[currentUrlIndex]?.endsWith('.m3u8'),
@@ -59,6 +62,62 @@ export function VideoPlayer({
       }
     }
   }, [initialPlayPos, isHls, hlsEl]);
+
+  // Handle video loading state and spinner display
+  useEffect(() => {
+    const el = isHls ? hlsEl : videoRef.current;
+    if (!el) return;
+
+    const handleLoadStart = () => {
+      // Start timer to show spinner after 200ms
+      if (spinnerTimeoutRef.current !== null) {
+        clearTimeout(spinnerTimeoutRef.current);
+      }
+      spinnerTimeoutRef.current = window.setTimeout(() => {
+        setShowSpinner(true);
+      }, 200);
+    };
+
+    const handleWaiting = () => {
+      if (spinnerTimeoutRef.current !== null) {
+        clearTimeout(spinnerTimeoutRef.current);
+      }
+      spinnerTimeoutRef.current = window.setTimeout(() => {
+        setShowSpinner(true);
+      }, 200);
+    };
+
+    const handleCanPlay = () => {
+      setShowSpinner(false);
+      if (spinnerTimeoutRef.current !== null) {
+        clearTimeout(spinnerTimeoutRef.current);
+        spinnerTimeoutRef.current = null;
+      }
+    };
+
+    const handlePlaying = () => {
+      setShowSpinner(false);
+      if (spinnerTimeoutRef.current !== null) {
+        clearTimeout(spinnerTimeoutRef.current);
+        spinnerTimeoutRef.current = null;
+      }
+    };
+
+    el.addEventListener('loadstart', handleLoadStart);
+    el.addEventListener('waiting', handleWaiting);
+    el.addEventListener('canplay', handleCanPlay);
+    el.addEventListener('playing', handlePlaying);
+
+    return () => {
+      el.removeEventListener('loadstart', handleLoadStart);
+      el.removeEventListener('waiting', handleWaiting);
+      el.removeEventListener('canplay', handleCanPlay);
+      el.removeEventListener('playing', handlePlaying);
+      if (spinnerTimeoutRef.current !== null) {
+        clearTimeout(spinnerTimeoutRef.current);
+      }
+    };
+  }, [isHls, hlsEl]);
 
   // Frame-by-frame navigation with . and , keys (global listener)
   useEffect(() => {
@@ -200,6 +259,13 @@ export function VideoPlayer({
           {/* TODO: add captions <track kind="captions" /> */}
           {/* TODO: add fallback sources <source src={url} type={mime} /> */}
         </video>
+      )}
+
+      {/* Loading spinner overlay */}
+      { showSpinner && !allFailed && (
+        <div className="absolute inset-0 flex items-center justify-center bg-black/20 pointer-events-none z-10">
+          <Loader2 className="h-32 w-32 animate-spin text-white text-8xl" />
+        </div>
       )}
 
       {hasCaptions && <media-captions-menu hidden anchor="auto"></media-captions-menu>}
