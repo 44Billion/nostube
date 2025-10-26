@@ -6,7 +6,6 @@ import { Loader2, Trash } from 'lucide-react'
 import { useAppContext } from '@/hooks/useAppContext'
 import {
   mirrorBlobsToServers,
-  uploadFileToMultipleServers,
   uploadFileToMultipleServersChunked,
   type ChunkedUploadProgress,
 } from '@/lib/blossom-upload'
@@ -378,7 +377,7 @@ export function VideoUpload() {
     setThumbnailUploadInfo({ uploadedBlobs: [], mirroredBlobs: [], uploading: true })
     try {
       // Upload to initial servers
-      const uploadedBlobs = await uploadFileToMultipleServers({
+      const uploadedBlobs = await uploadFileToMultipleServersChunked({
         file: acceptedFiles[0],
         servers: blossomInitalUploadServers.map(server => server.url),
         signer: async draft => await user.signer.signEvent(draft),

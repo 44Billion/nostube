@@ -7,24 +7,6 @@ export interface UploadFileWithProgressProps {
   signer: Signer
 }
 
-/**
- * DEPRECATED: This function uses PUT /upload which is not BUD-10 compliant
- * Use uploadFileToMultipleServersChunked instead for BUD-10 compliance
- */
-export async function uploadFileToMultipleServers({
-  file: _file,
-  servers: _servers,
-  signer: _signer,
-}: {
-  file: File
-  servers: string[]
-  signer: Signer
-}): Promise<BlobDescriptor[]> {
-  throw new Error(
-    'PUT-based upload is deprecated. Use uploadFileToMultipleServersChunked for BUD-10 compliant PATCH uploads.'
-  )
-}
-
 export async function mirrorBlobsToServers({
   mirrorServers,
   blob,
