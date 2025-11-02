@@ -3,10 +3,7 @@ import { AccountsContext } from 'applesauce-react'
 import { ExtensionAccount, NostrConnectAccount, SimpleAccount } from 'applesauce-accounts/accounts'
 import { ExtensionSigner, NostrConnectSigner, SimpleSigner } from 'applesauce-signers'
 import { nip19 } from 'nostr-tools'
-import {
-  saveAccountToStorage,
-  saveActiveAccount,
-} from '@/hooks/useAccountPersistence'
+import { saveAccountToStorage, saveActiveAccount } from '@/hooks/useAccountPersistence'
 
 // NOTE: This file should not be edited except for adding new login methods.
 
@@ -40,10 +37,10 @@ export function useLoginActions() {
         const signer = SimpleSigner.fromKey(decodedKey)
         const pubkey = await signer.getPublicKey()
         const account = new SimpleAccount(pubkey, signer)
-        
+
         await accountManager.addAccount(account)
         accountManager.setActive(account)
-        
+
         // Persist account (without nsec for security)
         saveAccountToStorage(account, 'nsec')
         saveActiveAccount(pubkey)
@@ -67,10 +64,10 @@ export function useLoginActions() {
         const signer = await NostrConnectSigner.fromBunkerURI(_uri)
         const pubkey = await signer.getPublicKey()
         const account = new NostrConnectAccount(pubkey, signer)
-        
+
         await accountManager.addAccount(account)
         accountManager.setActive(account)
-        
+
         // Persist account with bunker URI
         saveAccountToStorage(account, 'bunker', _uri)
         saveActiveAccount(pubkey)
@@ -89,10 +86,10 @@ export function useLoginActions() {
         const signer = new ExtensionSigner()
         const pubkey = await signer.getPublicKey()
         const account = new ExtensionAccount(pubkey, signer)
-        
+
         await accountManager.addAccount(account)
         accountManager.setActive(account)
-        
+
         // Persist extension account
         saveAccountToStorage(account, 'extension')
         saveActiveAccount(pubkey)

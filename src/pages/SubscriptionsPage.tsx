@@ -1,6 +1,12 @@
 import { VideoGrid } from '@/components/VideoGrid'
 import { InfiniteScrollTrigger } from '@/components/InfiniteScrollTrigger'
-import { useFollowedAuthors, useInfiniteScroll, useReadRelays, useAppContext, useReportedPubkeys } from '@/hooks'
+import {
+  useFollowedAuthors,
+  useInfiniteScroll,
+  useReadRelays,
+  useAppContext,
+  useReportedPubkeys,
+} from '@/hooks'
 import { useMemo, useEffect, useState, useCallback } from 'react'
 import { useEventStore, useObservableMemo } from 'applesauce-react/hooks'
 import { createTimelineLoader } from 'applesauce-loaders/loaders'
@@ -67,7 +73,7 @@ export function SubscriptionsPage() {
         setLoading(false)
         setHasLoaded(true)
       },
-      error: (err) => {
+      error: err => {
         console.error('Error loading subscriptions:', err)
         setLoading(false)
         setHasLoaded(true)
@@ -92,9 +98,7 @@ export function SubscriptionsPage() {
     const oldestEvent = videos.length > 0 ? videos[videos.length - 1] : null
     const until = oldestEvent?.created_at
 
-    const paginatedFilters = until
-      ? { ...filters, until }
-      : filters
+    const paginatedFilters = until ? { ...filters, until } : filters
 
     const loader = createTimelineLoader(pool, readRelays, paginatedFilters, {
       eventStore,
@@ -108,7 +112,7 @@ export function SubscriptionsPage() {
       complete: () => {
         setLoading(false)
       },
-      error: (err) => {
+      error: err => {
         console.error('Error loading more subscriptions:', err)
         setLoading(false)
       },

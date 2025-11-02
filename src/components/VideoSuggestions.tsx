@@ -106,18 +106,18 @@ export function VideoSuggestions({
       console.log('[VideoSuggestions] No relays available, skipping load')
       return
     }
-    
+
     console.log('[VideoSuggestions] Loading suggestions from relays:', relaysToUse)
     console.log('[VideoSuggestions] Author pubkey:', authorPubkey)
     console.log('[VideoSuggestions] Video type:', currentVideoType)
-    
+
     const filters = [
       {
         kinds: currentVideoType ? getKindsForType(currentVideoType) : getKindsForType('all'),
         limit: 30,
       },
     ]
-    
+
     // Add author filter if we have an author
     if (authorPubkey) {
       filters.unshift({
@@ -126,20 +126,20 @@ export function VideoSuggestions({
         limit: 30,
       })
     }
-    
+
     console.log('[VideoSuggestions] Filters:', filters)
-    
+
     const playlistLoader = createTimelineLoader(pool, relaysToUse, filters, {
       eventStore,
       limit: 30,
     })
     const sub = playlistLoader().subscribe({
-      next: (events) => {
+      next: events => {
         console.log('[VideoSuggestions] Loaded events:', events.length)
       },
-      error: (err) => {
+      error: err => {
         console.error('[VideoSuggestions] Error loading events:', err)
-      }
+      },
     })
     return () => sub.unsubscribe()
   }, [authorPubkey, currentVideoType, relaysToUse, pool, eventStore])
@@ -184,7 +184,14 @@ export function VideoSuggestions({
     }
 
     return processedVideos.slice(0, 30) // Return up to 30 unique suggestions
-  }, [authorSuggestions, globalSuggestions, blockedPubkeys, currentVideoId, readRelays, config.blossomServers])
+  }, [
+    authorSuggestions,
+    globalSuggestions,
+    blockedPubkeys,
+    currentVideoId,
+    readRelays,
+    config.blossomServers,
+  ])
 
   return (
     /* <ScrollArea className="h-[calc(100vh-4rem)]"> */

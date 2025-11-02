@@ -12,7 +12,7 @@ export function useInfiniteTimeline(loader?: TimelineLoader, readRelays: string[
 
   const [events, setEvents] = useState<NostrEvent[]>([])
   const [loading, setLoading] = useState(false)
-  
+
   const missingVideoIds = useMemo(() => {
     const missingMap = getAllMissingVideos()
     return new Set(Object.keys(missingMap))

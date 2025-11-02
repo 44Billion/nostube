@@ -14,7 +14,7 @@ export function useProfile(user?: ProfilePointer): ProfileContent | undefined {
     if (!user || !user.pubkey || user.pubkey.trim() === '') {
       return () => of(undefined)
     }
-    
+
     return events =>
       merge(
         // Request profile to be loaded via batched loader

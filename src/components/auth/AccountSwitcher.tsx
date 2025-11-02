@@ -31,10 +31,7 @@ function AccountSwitchItem({ account, onClick }: { account: IAccount; onClick: (
       className="flex items-center gap-2 cursor-pointer p-2 rounded-md"
     >
       <Avatar className="w-8 h-8">
-        <AvatarImage
-          src={imageProxy(accountProfile?.picture as string)}
-          alt={displayName || ''}
-        />
+        <AvatarImage src={imageProxy(accountProfile?.picture as string)} alt={displayName || ''} />
         <AvatarFallback>{displayName?.charAt(0) || '?'}</AvatarFallback>
       </Avatar>
       <div className="flex-1 truncate">
@@ -49,7 +46,7 @@ export function AccountSwitcher({ onAddAccountClick }: AccountSwitcherProps) {
   const accountManager = useAccountManager()
   const profile = useProfile(activeAccount ? { pubkey: activeAccount?.pubkey } : undefined)
   const navigate = useNavigate()
-  
+
   if (!activeAccount || !accountManager) return null
 
   // Get all accounts for switching

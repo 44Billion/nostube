@@ -84,7 +84,8 @@ const SignupDialog: React.FC<SignupDialogProps> = ({ isOpen, onClose }) => {
     } catch (error) {
       toast({
         title: 'Error',
-        description: error instanceof Error ? error.message : 'Failed to create account. Please try again.',
+        description:
+          error instanceof Error ? error.message : 'Failed to create account. Please try again.',
         variant: 'destructive',
       })
       setIsLoading(false)

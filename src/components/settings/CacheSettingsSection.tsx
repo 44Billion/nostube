@@ -43,15 +43,15 @@ export function CacheSettingsSection() {
   const handleClearCache = async () => {
     setIsClearing(true)
     setShowClearDialog(false)
-    
+
     // Store a flag in sessionStorage to trigger cache clear on page load
     sessionStorage.setItem('clearCacheOnLoad', 'true')
-    
+
     toast({
       title: 'Clearing Cache',
       description: 'The app will reload and clear the cache...',
     })
-    
+
     // Reload the page - this will close all DB connections
     // The cache clearing will happen in a beforeunload handler
     setTimeout(() => {
@@ -78,12 +78,7 @@ export function CacheSettingsSection() {
               <p className="font-medium">Cache Size</p>
               <p className="text-sm text-muted-foreground">{cacheSize}</p>
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={calculateCacheSize}
-              disabled={isClearing}
-            >
+            <Button variant="outline" size="sm" onClick={calculateCacheSize} disabled={isClearing}>
               Refresh
             </Button>
           </div>

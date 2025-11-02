@@ -21,6 +21,11 @@ declare global {
     'hls-video': HTMLVideoElement
   }
 
+  interface MediaChromeButtonElement extends HTMLElement {
+    part?: string
+    'aria-label'?: string
+  }
+
   namespace JSX {
     interface IntrinsicElements {
       'media-controller': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement>, HTMLElement>
@@ -75,6 +80,10 @@ declare global {
         React.VideoHTMLAttributes<HTMLVideoElement>,
         HTMLVideoElement
       >
+    }
+
+    interface HTMLAttributes<T> {
+      part?: string
     }
   }
 }

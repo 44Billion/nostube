@@ -34,9 +34,7 @@ export function InfiniteScrollTrigger({
       {!loading && exhausted && itemCount > 0 && (
         <div className="text-muted-foreground">{exhaustedMessage}</div>
       )}
-      {itemCount === 0 && !loading && (
-        <div className="text-muted-foreground">{emptyMessage}</div>
-      )}
+      {itemCount === 0 && !loading && <div className="text-muted-foreground">{emptyMessage}</div>}
     </div>
   )
 }

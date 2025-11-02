@@ -34,13 +34,14 @@ const LoginDialog: React.FC<LoginDialogProps> = ({ isOpen, onClose, onLogin, onS
   const handleExtensionLogin = async () => {
     setIsLoading(true)
     setError(null)
-    
+
     try {
       await login.extension()
       onLogin()
       onClose()
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Extension login failed. Please try again.'
+      const errorMessage =
+        error instanceof Error ? error.message : 'Extension login failed. Please try again.'
       setError(errorMessage)
       console.error('Extension login failed:', error)
     } finally {
@@ -53,7 +54,7 @@ const LoginDialog: React.FC<LoginDialogProps> = ({ isOpen, onClose, onLogin, onS
       setError('Please enter your nsec key')
       return
     }
-    
+
     setIsLoading(true)
     setError(null)
 
@@ -63,7 +64,10 @@ const LoginDialog: React.FC<LoginDialogProps> = ({ isOpen, onClose, onLogin, onS
       onLogin()
       onClose()
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Nsec login failed. Please check your key and try again.'
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : 'Nsec login failed. Please check your key and try again.'
       setError(errorMessage)
       console.error('Nsec login failed:', error)
     } finally {
@@ -76,12 +80,12 @@ const LoginDialog: React.FC<LoginDialogProps> = ({ isOpen, onClose, onLogin, onS
       setError('Please enter a bunker URI')
       return
     }
-    
+
     if (!bunkerUri.startsWith('bunker://')) {
       setError('Bunker URI must start with bunker://')
       return
     }
-    
+
     setIsLoading(true)
     setError(null)
 
@@ -91,7 +95,10 @@ const LoginDialog: React.FC<LoginDialogProps> = ({ isOpen, onClose, onLogin, onS
       onLogin()
       onClose()
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Bunker login failed. Please check your URI and try again.'
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : 'Bunker login failed. Please check your URI and try again.'
       setError(errorMessage)
       console.error('Bunker login failed:', error)
     } finally {
@@ -135,9 +142,9 @@ const LoginDialog: React.FC<LoginDialogProps> = ({ isOpen, onClose, onLogin, onS
               <AlertDescription>{error}</AlertDescription>
             </Alert>
           )}
-          
-          <Tabs 
-            defaultValue={'nostr' in window ? 'extension' : 'key'} 
+
+          <Tabs
+            defaultValue={'nostr' in window ? 'extension' : 'key'}
             className="w-full"
             onValueChange={() => setError(null)}
           >

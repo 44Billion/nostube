@@ -37,10 +37,13 @@ function ShortVideoItem({
   const videoElementRef = useRef<HTMLVideoElement>(null)
   const [currentUrlIndex, setCurrentUrlIndex] = useState(0)
   const eventStore = useEventStore()
-  
+
   // Get the event from store to access seenRelays
   const event = useMemo(() => eventStore.getEvent(video.id), [eventStore, video.id])
-  const authorNprofile = useMemo(() => nprofileFromEvent(video.pubkey, event), [video.pubkey, event])
+  const authorNprofile = useMemo(
+    () => nprofileFromEvent(video.pubkey, event),
+    [video.pubkey, event]
+  )
 
   useEffect(() => {
     if (!videoRef.current) return

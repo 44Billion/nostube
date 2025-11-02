@@ -25,7 +25,10 @@ export function VideoCard({ video, hideAuthor, format = 'square' }: VideoCardPro
 
   // Get the event from the store to access seenRelays
   const event = useMemo(() => eventStore.getEvent(video.id), [eventStore, video.id])
-  const authorNprofile = useMemo(() => nprofileFromEvent(video.pubkey, event), [video.pubkey, event])
+  const authorNprofile = useMemo(
+    () => nprofileFromEvent(video.pubkey, event),
+    [video.pubkey, event]
+  )
 
   const aspectRatio =
     format == 'vertical' ? 'aspect-[2/3]' : format == 'square' ? 'aspect-[1/1]' : 'aspect-video'

@@ -35,9 +35,13 @@ presistEventsToCache(eventStore, events => addEvents(cache!, events))
 // Configure NostrConnectSigner with relay pool methods
 // This is required for NIP-46 bunker:// URI login to work
 const subscriptionMethod: NostrSubscriptionMethod = (relays: string[], filters: Filter[]) => {
-  return relayPool.subscription(relays, filters).pipe(
-    filter((response): response is NostrEvent => typeof response !== 'string' && 'kind' in response)
-  )
+  return relayPool
+    .subscription(relays, filters)
+    .pipe(
+      filter(
+        (response): response is NostrEvent => typeof response !== 'string' && 'kind' in response
+      )
+    )
 }
 
 const publishMethod: NostrPublishMethod = async (relays: string[], event: NostrEvent) => {

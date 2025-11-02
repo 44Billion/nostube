@@ -57,10 +57,10 @@ export function extractBlossomHash(url: string): { sha256?: string; ext?: string
   try {
     const urlObj = new URL(url)
     const pathname = urlObj.pathname
-    
+
     // Extract filename from path
     const filename = pathname.split('/').pop() || ''
-    
+
     // Check if it looks like a Blossom URL (64 char hex hash + extension)
     const match = filename.match(/^([a-f0-9]{64})\.([^.]+)$/i)
     if (match) {
@@ -69,7 +69,7 @@ export function extractBlossomHash(url: string): { sha256?: string; ext?: string
         ext: match[2],
       }
     }
-    
+
     return {}
   } catch {
     return {}
@@ -81,18 +81,15 @@ export function extractBlossomHash(url: string): { sha256?: string; ext?: string
  * Format: https://proxyserver.com/{sha256}.{ext}?origin={protocol+hostname}
  * If the proxy server origin matches the original URL origin, the origin parameter is omitted
  */
-function generateProxyUrls(
-  originalUrls: string[],
-  proxyServers: BlossomServer[]
-): string[] {
+function generateProxyUrls(originalUrls: string[], proxyServers: BlossomServer[]): string[] {
   if (proxyServers.length === 0) return []
-  
+
   const proxyUrls: string[] = []
-  
+
   for (const originalUrl of originalUrls) {
     // Try to extract SHA256 from the URL
     const { sha256, ext } = extractBlossomHash(originalUrl)
-    
+
     if (sha256 && ext) {
       // Extract protocol + hostname from original URL (no path or extension)
       let originBase = ''
@@ -103,12 +100,12 @@ function generateProxyUrls(
         // If URL parsing fails, skip this URL
         continue
       }
-      
+
       // Generate proxy URLs for each proxy server
       for (const proxyServer of proxyServers) {
         // Ensure proxy server URL doesn't end with /
         const baseUrl = proxyServer.url.replace(/\/$/, '')
-        
+
         // Extract proxy server origin
         let proxyOrigin = ''
         try {
@@ -118,7 +115,7 @@ function generateProxyUrls(
           // If URL parsing fails, skip this proxy server
           continue
         }
-        
+
         // If the origin matches the proxy server, use direct URL without origin parameter
         if (originBase === proxyOrigin) {
           const directUrl = `${baseUrl}/${sha256}.${ext}`
@@ -131,7 +128,7 @@ function generateProxyUrls(
       }
     }
   }
-  
+
   return proxyUrls
 }
 // Process Nostr events into cache entries

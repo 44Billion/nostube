@@ -69,7 +69,9 @@ export function VideoTimelineProvider({ children }: { children: React.ReactNode 
       // Create videos observable
       const videos$ = eventStore
         .timeline(filter)
-        .pipe(map(events => processEvents(events, readRelays, blockedPubkeys, config.blossomServers)))
+        .pipe(
+          map(events => processEvents(events, readRelays, blockedPubkeys, config.blossomServers))
+        )
 
       // Subscribe to videos observable
       videos$.subscribe(events => {

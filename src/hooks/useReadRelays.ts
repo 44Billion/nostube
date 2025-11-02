@@ -6,7 +6,7 @@ import { useAppContext } from './useAppContext'
  */
 export function useReadRelays(): string[] {
   const { config } = useAppContext()
-  
+
   return useMemo(
     () => config.relays.filter(r => r.tags.includes('read')).map(r => r.url),
     [config.relays]

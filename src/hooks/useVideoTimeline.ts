@@ -21,7 +21,7 @@ export default function useVideoTimeline(type: VideoType, authors?: string[]) {
   const [videosLoading, setVideosLoading] = useState(false)
 
   const readRelays = useReadRelays()
-  
+
   const missingVideoIds = useMemo(() => {
     const missingMap = getAllMissingVideos()
     return new Set(Object.keys(missingMap))
@@ -41,11 +41,25 @@ export default function useVideoTimeline(type: VideoType, authors?: string[]) {
   const videos$ = useMemo(() => {
     const result = eventStore.timeline(filters).pipe(
       map(events => {
-        return processEvents(events, readRelays, blockedPubkeys, config.blossomServers, missingVideoIds)
+        return processEvents(
+          events,
+          readRelays,
+          blockedPubkeys,
+          config.blossomServers,
+          missingVideoIds
+        )
       })
     )
     return result
-  }, [eventStore, readRelays, blockedPubkeys, type, filters, config.blossomServers, missingVideoIds])
+  }, [
+    eventStore,
+    readRelays,
+    blockedPubkeys,
+    type,
+    filters,
+    config.blossomServers,
+    missingVideoIds,
+  ])
 
   const videos =
     useObservableMemo(() => {

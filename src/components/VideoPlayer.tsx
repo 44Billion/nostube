@@ -25,6 +25,15 @@ interface VideoPlayerProps {
    * Callback when all video sources fail to load
    */
   onAllSourcesFailed?: (urls: string[]) => void
+  /**
+   * Cinema mode state and toggle
+   */
+  cinemaMode?: boolean
+  onToggleCinemaMode?: () => void
+  /**
+   * Callback when video dimensions are loaded
+   */
+  onVideoDimensionsLoaded?: (width: number, height: number) => void
 }
 
 export function VideoPlayer({
@@ -38,6 +47,9 @@ export function VideoPlayer({
   contentWarning,
   initialPlayPos = 0,
   onAllSourcesFailed,
+  cinemaMode = false,
+  onToggleCinemaMode,
+  onVideoDimensionsLoaded,
 }: VideoPlayerProps) {
   const videoRef = useRef<HTMLVideoElement>(null)
   const [hlsEl, setHlsEl] = useState<HTMLVideoElement | null>(null)
@@ -58,17 +70,49 @@ export function VideoPlayer({
     setTriedHead(false)
   }, [urls])
 
-  // Set initial play position on mount or when initialPlayPos changes
+  // Track if we've already set the initial position
+  const hasSetInitialPos = useRef(false)
+
+  // Set initial play position on mount
   useEffect(() => {
     const el = isHls ? hlsEl : videoRef.current
-    if (!el) return
+    if (!el || hasSetInitialPos.current) return
     if (initialPlayPos > 0) {
       // Only seek if the difference is significant (e.g., >1s)
       if (Math.abs(el.currentTime - initialPlayPos) > 1) {
         el.currentTime = initialPlayPos
+        hasSetInitialPos.current = true
       }
     }
   }, [initialPlayPos, isHls, hlsEl])
+
+  // Reset the flag when URLs change (new video)
+  useEffect(() => {
+    hasSetInitialPos.current = false
+  }, [urls])
+
+  // Detect video dimensions when metadata is loaded
+  useEffect(() => {
+    const el = isHls ? hlsEl : videoRef.current
+    if (!el) return
+
+    const handleLoadedMetadata = () => {
+      if (onVideoDimensionsLoaded && el.videoWidth > 0 && el.videoHeight > 0) {
+        onVideoDimensionsLoaded(el.videoWidth, el.videoHeight)
+      }
+    }
+
+    el.addEventListener('loadedmetadata', handleLoadedMetadata)
+
+    // If metadata is already loaded, call immediately
+    if (el.readyState >= 1 && el.videoWidth > 0 && el.videoHeight > 0) {
+      handleLoadedMetadata()
+    }
+
+    return () => {
+      el.removeEventListener('loadedmetadata', handleLoadedMetadata)
+    }
+  }, [isHls, hlsEl, onVideoDimensionsLoaded])
 
   // Handle video loading state and spinner display
   useEffect(() => {
@@ -294,6 +338,33 @@ export function VideoPlayer({
         <media-playback-rate-button></media-playback-rate-button>
         <media-pip-button />
         {hasCaptions && <media-captions-menu-button></media-captions-menu-button>}
+        {onToggleCinemaMode && (
+          <button
+            className="media-button"
+            aria-label={cinemaMode ? 'Exit cinema mode' : 'Enter cinema mode'}
+            onClick={onToggleCinemaMode}
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="26"
+              height="26"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              {cinemaMode ? (
+                // Exit cinema mode - smaller 16:9 rectangle (normal view)
+                <rect x="1" y="6" width="22" height="12" rx="1" />
+              ) : (
+                // Enter cinema mode - full-width 16:9 rectangle (cinema view)
+                <rect x="1" y="4.5" width="22" height="15" rx="1" />
+              )}
+            </svg>
+          </button>
+        )}
         <media-fullscreen-button />
       </media-control-bar>
     </media-controller>

@@ -140,8 +140,8 @@ export function BlossomServersSection() {
                                 tag == 'mirror'
                                   ? 'bg-blue-500 hover:bg-blue-500/90'
                                   : tag === 'proxy'
-                                  ? 'bg-purple-500 hover:bg-purple-500/90'
-                                  : 'bg-orange-500 hover:bg-orange-500/90'
+                                    ? 'bg-purple-500 hover:bg-purple-500/90'
+                                    : 'bg-orange-500 hover:bg-orange-500/90'
                               )}
                             >
                               {tag}

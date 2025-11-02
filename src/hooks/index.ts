@@ -1,9 +1,20 @@
 // Account persistence utilities (not a hook, just functions)
-export { restoreAccountsToManager, saveActiveAccount, removeAccountFromStorage, saveAccountToStorage, loadAccountsFromStorage, loadActiveAccount, canRestoreExtensionAccount, restoreAccount, clearAllAccounts } from './useAccountPersistence'
+export {
+  restoreAccountsToManager,
+  saveActiveAccount,
+  removeAccountFromStorage,
+  saveAccountToStorage,
+  loadAccountsFromStorage,
+  loadActiveAccount,
+  canRestoreExtensionAccount,
+  restoreAccount,
+  clearAllAccounts,
+} from './useAccountPersistence'
 export type { AccountMethod, PersistedAccount } from './useAccountPersistence'
 
 // Hooks
 export { useAppContext } from './useAppContext'
+export { useCinemaMode } from './useCinemaMode'
 export { useCurrentUser } from './useCurrentUser'
 export { useDebounce } from './useDebounce'
 export { useFollowedAuthors } from './useFollowedAuthors'

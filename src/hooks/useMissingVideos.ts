@@ -17,9 +17,9 @@ const DAY_MS = 24 * HOUR_MS
 
 // Retry schedule
 const RETRY_SCHEDULE = [
-  1 * HOUR_MS,     // 1st failure: retry after 1 hour
-  6 * HOUR_MS,     // 2nd failure: retry after 6 hours
-  24 * HOUR_MS,    // 3rd+ failure: retry after 24 hours
+  1 * HOUR_MS, // 1st failure: retry after 1 hour
+  6 * HOUR_MS, // 2nd failure: retry after 6 hours
+  24 * HOUR_MS, // 3rd+ failure: retry after 24 hours
 ]
 
 const PERMANENT_FAILURE_THRESHOLD = 7 * DAY_MS // After 7 days, consider permanent

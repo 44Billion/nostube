@@ -27,23 +27,23 @@ export function saveAccountToStorage(
 ): void {
   try {
     const accounts = loadAccountsFromStorage()
-    
+
     // Find if account already exists
     const existingIndex = accounts.findIndex(acc => acc.pubkey === account.pubkey)
-    
+
     const accountData: PersistedAccount = {
       pubkey: account.pubkey,
       method,
       data: method === 'nsec' ? undefined : data, // Don't store nsec for security
       createdAt: existingIndex >= 0 ? accounts[existingIndex].createdAt : Date.now(),
     }
-    
+
     if (existingIndex >= 0) {
       accounts[existingIndex] = accountData
     } else {
       accounts.push(accountData)
     }
-    
+
     localStorage.setItem(STORAGE_KEY_ACCOUNTS, JSON.stringify(accounts))
   } catch (error) {
     console.error('Failed to save account to storage:', error)
@@ -61,7 +61,7 @@ export function loadAccountsFromStorage(): PersistedAccount[] {
   try {
     const stored = localStorage.getItem(STORAGE_KEY_ACCOUNTS)
     if (!stored) return []
-    
+
     const accounts = JSON.parse(stored) as PersistedAccount[]
     return Array.isArray(accounts) ? accounts : []
   } catch (error) {
@@ -107,7 +107,7 @@ export function removeAccountFromStorage(pubkey: string): void {
     const accounts = loadAccountsFromStorage()
     const filtered = accounts.filter(acc => acc.pubkey !== pubkey)
     localStorage.setItem(STORAGE_KEY_ACCOUNTS, JSON.stringify(filtered))
-    
+
     // If removing active account, clear active
     const active = loadActiveAccount()
     if (active === pubkey) {
@@ -128,9 +128,7 @@ export function canRestoreExtensionAccount(): boolean {
 /**
  * Restore a single account from persisted data
  */
-export async function restoreAccount(
-  accountData: PersistedAccount
-): Promise<IAccount | null> {
+export async function restoreAccount(accountData: PersistedAccount): Promise<IAccount | null> {
   try {
     switch (accountData.method) {
       case 'extension': {
@@ -147,14 +145,14 @@ export async function restoreAccount(
         }
         return new ExtensionAccount(pubkey, signer)
       }
-      
+
       case 'nsec': {
         // Note: nsec is not stored for security reasons
         // User must re-enter nsec on reload
         console.warn('Nsec accounts require re-authentication for security')
         return null
       }
-      
+
       case 'bunker': {
         if (!accountData.data) {
           console.warn('Bunker URI missing for account')
@@ -174,7 +172,7 @@ export async function restoreAccount(
           return null
         }
       }
-      
+
       default:
         console.warn('Unknown account method:', accountData.method)
         return null
@@ -188,14 +186,12 @@ export async function restoreAccount(
 /**
  * Restore all accounts to AccountManager
  */
-export async function restoreAccountsToManager(
-  accountManager: AccountManager
-): Promise<void> {
+export async function restoreAccountsToManager(accountManager: AccountManager): Promise<void> {
   const persistedAccounts = loadAccountsFromStorage()
   const activePubkey = loadActiveAccount()
-  
+
   const restoredAccounts: IAccount[] = []
-  
+
   for (const accountData of persistedAccounts) {
     const account = await restoreAccount(accountData)
     if (account) {
@@ -206,7 +202,7 @@ export async function restoreAccountsToManager(
       removeAccountFromStorage(accountData.pubkey)
     }
   }
-  
+
   // Set active account if it was restored
   if (activePubkey) {
     const activeAccount = restoredAccounts.find(acc => acc.pubkey === activePubkey)
@@ -230,4 +226,3 @@ export function clearAllAccounts(): void {
     console.error('Failed to clear accounts:', error)
   }
 }
-

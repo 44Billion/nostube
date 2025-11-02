@@ -53,10 +53,10 @@ export function useBatchedProfileLoader() {
       )
 
       loader().subscribe({
-        next: (event) => {
+        next: event => {
           // Events are automatically added to eventStore by the loader
         },
-        error: (err) => {
+        error: err => {
           console.error('[Batch Profile Loader] Error loading profiles:', err)
         },
       })

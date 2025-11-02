@@ -11,14 +11,21 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { formatDistance } from 'date-fns'
 import { Separator } from '@/components/ui/separator'
-import { useEffect, useState, useMemo, useRef } from 'react'
+import { useEffect, useState, useMemo, useRef, useCallback } from 'react'
 import { processEvent } from '@/utils/video-event'
 import { nip19 } from 'nostr-tools'
 import { decodeEventPointer } from '@/lib/nip19'
 import { combineRelays } from '@/lib/utils'
 import { Skeleton } from '@/components/ui/skeleton'
 import { CollapsibleText } from '@/components/ui/collapsible-text'
-import { useAppContext, useCurrentUser, useNostrPublish, useProfile, useMissingVideos } from '@/hooks'
+import {
+  useAppContext,
+  useCurrentUser,
+  useNostrPublish,
+  useProfile,
+  useMissingVideos,
+  useCinemaMode,
+} from '@/hooks'
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -109,6 +116,10 @@ function parseTimeParam(t: string | null): number {
   return 0
 }
 
+// Constants for ultra-wide video detection
+const SIXTEEN_NINE_RATIO = 16 / 9
+const ULTRA_WIDE_THRESHOLD = SIXTEEN_NINE_RATIO * 1.05
+
 export function VideoPage() {
   const { config } = useAppContext()
   const { nevent } = useParams<{ nevent: string }>()
@@ -117,6 +128,19 @@ export function VideoPage() {
   const navigate = useNavigate()
   const eventPointer = useMemo(() => decodeEventPointer(nevent ?? ''), [nevent])
   const { markVideoAsMissing, clearMissingVideo, isVideoMissing } = useMissingVideos()
+  const { cinemaMode: persistedCinemaMode, setCinemaMode } = useCinemaMode()
+  const [videoAspectRatio, setVideoAspectRatio] = useState<number | null>(null)
+  const [tempCinemaModeForWideVideo, setTempCinemaModeForWideVideo] = useState(false)
+
+  // Effective cinema mode: temp override for ultra-wide, or persisted preference
+  const cinemaMode = tempCinemaModeForWideVideo || persistedCinemaMode
+
+  // Toggle function that updates persisted state
+  const toggleCinemaMode = useCallback(() => {
+    setCinemaMode(!persistedCinemaMode)
+    // Clear temp override when user manually toggles
+    setTempCinemaModeForWideVideo(false)
+  }, [persistedCinemaMode, setCinemaMode])
 
   // Get relays from nevent if available, otherwise use config relays
   const relaysToUse = useMemo(() => {
@@ -169,9 +193,49 @@ export function VideoPage() {
   const metadata = useProfile(video?.pubkey ? { pubkey: video.pubkey } : undefined)
   const authorName = metadata?.display_name || metadata?.name || video?.pubkey?.slice(0, 8) || ''
 
+  // Callback when video dimensions are loaded from the video element
+  const handleVideoDimensionsLoaded = useCallback((width: number, height: number) => {
+    const aspectRatio = width / height
+    setVideoAspectRatio(aspectRatio)
+  }, [])
+
+  // Check if video is wider than 16:9 (e.g., ultra-wide video)
+  const isUltraWide = useMemo(() => {
+    // First try to get dimensions from video metadata
+    if (video?.dimensions) {
+      const match = video.dimensions.match(/(\d+)x(\d+)/)
+      if (match) {
+        const width = parseInt(match[1], 10)
+        const height = parseInt(match[2], 10)
+        const aspectRatio = width / height
+        return aspectRatio > ULTRA_WIDE_THRESHOLD
+      }
+    }
+
+    // Fall back to video element dimensions
+    if (videoAspectRatio !== null) {
+      return videoAspectRatio > ULTRA_WIDE_THRESHOLD
+    }
+
+    return false
+  }, [video?.dimensions, videoAspectRatio])
+
+  // Reset aspect ratio and temp cinema mode when video changes
   useEffect(() => {
-    console.log(video)
-  }, [video])
+    setVideoAspectRatio(null)
+    setTempCinemaModeForWideVideo(false)
+  }, [video?.id])
+
+  // Auto-enable TEMP cinema mode for ultra-wide videos (doesn't affect persisted state)
+  useEffect(() => {
+    // Don't do anything until we have the aspect ratio
+    if (videoAspectRatio === null) return
+
+    // Enable temp cinema mode for ultra-wide videos (if not already in cinema mode via user preference)
+    if (isUltraWide && !persistedCinemaMode) {
+      setTempCinemaModeForWideVideo(true)
+    }
+  }, [isUltraWide, videoAspectRatio, persistedCinemaMode])
 
   useEffect(() => {
     if (video?.title) {
@@ -268,8 +332,10 @@ export function VideoPage() {
 
   // Handle mirror action
   const handleMirror = async () => {
-    alert('Mirror functionality is not implemented yet. This feature will allow you to copy the video to your configured blossom servers for better redundancy.')
-    
+    alert(
+      'Mirror functionality is not implemented yet. This feature will allow you to copy the video to your configured blossom servers for better redundancy.'
+    )
+
     /* TODO: Uncomment when mirror functionality is ready
     if (!video || !video.urls || video.urls.length === 0 || !user) return
 
@@ -351,15 +417,194 @@ export function VideoPage() {
     }
   }, [shareUrl, fullUrl, title, thumbnailUrl])
 
+  // Helper to render video info section (title, author, description, comments)
+  const renderVideoInfo = () => {
+    if (isLoading) {
+      return (
+        <div className="flex flex-col gap-4">
+          <Skeleton className="mt-4 h-8 w-3/4" />
+          <div className="flex items-start justify-between">
+            <div className="flex items-center gap-4">
+              <Skeleton className="h-12 w-12 rounded-full" />
+              <div className="space-y-2">
+                <Skeleton className="h-4 w-32" />
+                <Skeleton className="h-3 w-24" />
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <Skeleton className="h-9 w-9 rounded-full" />
+              <Skeleton className="h-9 w-9 rounded-full" />
+            </div>
+          </div>
+          <Separator />
+          <div className="space-y-2">
+            <Skeleton className="h-4 w-1/4" />
+            <div className="flex flex-wrap gap-2">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <Skeleton key={i} className="h-6 w-16" />
+              ))}
+            </div>
+            <Skeleton className="h-20 w-full" />
+          </div>
+        </div>
+      )
+    }
+
+    if (!video || video.urls.length === 0) return null
+
+    return (
+      <>
+        <div className="flex flex-col gap-4 p-4">
+          {video?.title && <h1 className="text-2xl font-bold">{video?.title}</h1>}
+
+          <div className="flex items-start justify-between">
+            <Link
+              to={`/author/${nip19.nprofileEncode({ pubkey: video?.pubkey || '', relays: relaysToUse })}`}
+              className="flex items-center gap-4"
+            >
+              <Avatar>
+                <AvatarImage src={imageProxy(metadata?.picture)} />
+                <AvatarFallback>{authorName[0]}</AvatarFallback>
+              </Avatar>
+              <div>
+                <div className="font-semibold">{authorName}</div>
+                <div className="text-sm text-muted-foreground">
+                  {video?.created_at &&
+                    formatDistance(new Date(video.created_at * 1000), new Date(), {
+                      addSuffix: true,
+                    })}
+                </div>
+              </div>
+            </Link>
+
+            <div className="flex items-center gap-2">
+              <AddToPlaylistButton
+                videoId={video.id}
+                videoKind={video.kind}
+                videoTitle={video.title}
+              />
+              <ButtonWithReactions
+                eventId={video.id}
+                authorPubkey={video.pubkey}
+                kind={video.kind}
+              />
+              <ShareButton
+                shareOpen={shareOpen}
+                setShareOpen={setShareOpen}
+                shareUrl={shareUrl}
+                includeTimestamp={includeTimestamp}
+                setIncludeTimestamp={setIncludeTimestamp}
+                shareLinks={shareLinks}
+              />
+              {user?.pubkey === video.pubkey && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="secondary" aria-label="More actions">
+                      <MoreVertical className="w-5 h-5" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" side="top">
+                    <DropdownMenuItem onSelect={() => setShowDeleteDialog(true)}>
+                      <TrashIcon className="w-5 h-5" />
+                      &nbsp; Delete Video
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
+            </div>
+          </div>
+
+          <Separator />
+
+          {video && video.tags.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {video.tags.slice(20).map(tag => (
+                <Badge key={tag} variant="secondary">
+                  {tag}
+                </Badge>
+              ))}
+            </div>
+          )}
+
+          {video?.description && (
+            <CollapsibleText text={video.description} className="text-muted-foreground" />
+          )}
+        </div>
+        <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete Video?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to delete this video? This action cannot be undone. A deletion
+                event will be published to all relays.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                className="bg-red-600 hover:bg-red-700"
+                disabled={isDeleting}
+                onClick={async () => {
+                  if (!video) return
+                  await publish({
+                    event: {
+                      kind: 5,
+                      content: 'Deleted by author',
+                      tags: [['e', video.id]],
+                      created_at: nowInSecs(),
+                    },
+                    relays: config.relays.map(r => r.url),
+                  })
+                  setShowDeleteDialog(false)
+                  navigate('/')
+                }}
+              >
+                {isDeleting ? 'Deleting...' : 'Delete'}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+        {video && (
+          <div className="p-4">
+            <VideoComments videoId={video.id} authorPubkey={video.pubkey} link={video.link} />
+          </div>
+        )}
+      </>
+    )
+  }
+
+  // Helper to render suggestions alert
+  const renderSuggestionsAlert = () => {
+    if (!video || blossomServerCount !== 1) return null
+
+    return (
+      <Alert>
+        <AlertCircle className="h-4 w-4" />
+        <AlertTitle>Limited Availability</AlertTitle>
+        <AlertDescription className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <span className="flex-1">
+            This video is only available on 1 blossom server. Consider mirroring it to your servers.
+          </span>
+          <Button
+            onClick={handleMirror}
+            disabled={false}
+            size="sm"
+            className="sm:ml-4 shrink-0 sm:self-center"
+          >
+            Mirror
+          </Button>
+        </AlertDescription>
+      </Alert>
+    )
+  }
+
   if (!isLoading && !video) {
     const isMissing = eventPointer && isVideoMissing(eventPointer.id)
     return (
       <div className="max-w-4xl mx-auto p-6">
         <Alert variant={isMissing ? 'destructive' : 'default'}>
           <AlertCircle className="h-4 w-4" />
-          <AlertTitle>
-            {isMissing ? 'Video Unavailable' : 'Video Not Found'}
-          </AlertTitle>
+          <AlertTitle>{isMissing ? 'Video Unavailable' : 'Video Not Found'}</AlertTitle>
           <AlertDescription className="flex flex-col gap-4">
             <p>
               {isMissing
@@ -384,234 +629,74 @@ export function VideoPage() {
     )
   }
 
+  // Render video player (shared between both modes to preserve play position)
+  const renderVideoPlayer = () => {
+    if (isLoading) {
+      return <Skeleton className="w-full aspect-video" />
+    }
+
+    if (!video || video.urls.length === 0) {
+      return null
+    }
+
+    return (
+      <VideoPlayer
+        key={video.id}
+        urls={video.urls}
+        textTracks={video.textTracks}
+        mime={video.mimeType || ''}
+        poster={video.images[0] || ''}
+        loop={[34236, 22].includes(video?.kind || 0)}
+        className={
+          cinemaMode ? 'w-full aspect-video' : 'w-full max-h-[80dvh] aspect-video rounded-lg'
+        }
+        onTimeUpdate={setCurrentPlayPos}
+        initialPlayPos={currentPlayPos > 0 ? currentPlayPos : initialPlayPos}
+        contentWarning={video.contentWarning}
+        onAllSourcesFailed={urls => markVideoAsMissing(video.id, urls)}
+        cinemaMode={cinemaMode}
+        onToggleCinemaMode={toggleCinemaMode}
+        onVideoDimensionsLoaded={handleVideoDimensionsLoaded}
+      />
+    )
+  }
+
   return (
-    <div className="max-w-[140rem] mx-auto sm:py-4">
-      {/*video && (
-        <div className="md:px-6 lg:flex-row">
-          <VideoPlayer
-            urls={video.urls}
-            textTracks={video.textTracks}
-            mime={video.mimeType || ''}
-            poster={video.images[0] || ''}
-            loop={[34236, 22].includes(video?.kind || 0)}
-            className="w-full max-h-[80dvh] aspect-video rounded-lg"
-            onTimeUpdate={setCurrentPlayPos}
-            initialPlayPos={initialPlayPos}
-          />
+    <div className={cinemaMode ? '' : 'max-w-[140rem] mx-auto sm:py-4'}>
+      <div className={cinemaMode ? 'flex flex-col' : 'flex gap-6 md:px-6 flex-col lg:flex-row'}>
+        {/* Video player container - always rendered in same position */}
+        <div className={cinemaMode ? '' : 'flex-1'}>
+          {renderVideoPlayer()}
+          {!cinemaMode && renderVideoInfo()}
         </div>
-      )*/}
-      <div className="flex gap-6 md:px-6 flex-col lg:flex-row">
-        <div className="flex-1">
-          {isLoading ? (
-            <div>
-              <Skeleton className="w-full aspect-video" />
 
-              <div className="flex flex-col gap-4">
-                <Skeleton className="mt-4 h-8 w-3/4" />
-                <div className="flex items-start justify-between">
-                  <div className="flex items-center gap-4">
-                    <Skeleton className="h-12 w-12 rounded-full" />
-                    <div className="space-y-2">
-                      <Skeleton className="h-4 w-32" />
-                      <Skeleton className="h-3 w-24" />
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Skeleton className="h-9 w-9 rounded-full" />
-                    <Skeleton className="h-9 w-9 rounded-full" />
-                  </div>
-                </div>
-                <Separator />
-                <div className="space-y-2">
-                  <Skeleton className="h-4 w-1/4" />
-                  <div className="flex flex-wrap gap-2">
-                    {Array.from({ length: 3 }).map((_, i) => (
-                      <Skeleton key={i} className="h-6 w-16" />
-                    ))}
-                  </div>
-                  <Skeleton className="h-20 w-full" />
-                </div>
-              </div>
-            </div>
-          ) : (
-            video &&
-            video.urls.length > 0 && (
-              <div>
-                <VideoPlayer
-                  urls={video.urls}
-                  textTracks={video.textTracks}
-                  mime={video.mimeType || ''}
-                  poster={video.images[0] || ''}
-                  loop={[34236, 22].includes(video?.kind || 0)}
-                  className="w-full max-h-[80dvh] aspect-video rounded-lg"
-                  onTimeUpdate={setCurrentPlayPos}
-                  initialPlayPos={initialPlayPos}
-                  contentWarning={video.contentWarning}
-                  onAllSourcesFailed={(urls) => markVideoAsMissing(video.id, urls)}
+        {/* Sidebar/Bottom content */}
+        {cinemaMode ? (
+          <div className="w-full max-w-[140rem] mx-auto">
+            <div className="flex gap-6 md:px-6 flex-col lg:flex-row mt-4">
+              <div className="flex-1">{renderVideoInfo()}</div>
+              <div className="w-full lg:w-96 p-2 md:p-0 space-y-4">
+                {renderSuggestionsAlert()}
+                <VideoSuggestions
+                  currentVideoId={video?.id}
+                  authorPubkey={video?.pubkey}
+                  currentVideoType={video?.type}
+                  relays={relaysToUse}
                 />
-                <div className="flex flex-col gap-4 p-4">
-                  {video?.title && <h1 className="text-2xl font-bold">{video?.title}</h1>}
-
-                  <div className="flex items-start justify-between">
-                    <Link
-                      to={`/author/${nip19.nprofileEncode({ pubkey: video?.pubkey || '', relays: relaysToUse })}`}
-                      className="flex items-center gap-4"
-                    >
-                      <Avatar>
-                        <AvatarImage src={imageProxy(metadata?.picture)} />
-                        <AvatarFallback>{authorName[0]}</AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <div className="font-semibold">{authorName}</div>
-                        <div className="text-sm text-muted-foreground">
-                          {video?.created_at &&
-                            formatDistance(new Date(video.created_at * 1000), new Date(), {
-                              addSuffix: true,
-                            })}
-                        </div>
-                      </div>
-                    </Link>
-
-                    <div className="flex items-center gap-2">
-                      <AddToPlaylistButton
-                        videoId={video.id}
-                        videoKind={video.kind}
-                        videoTitle={video.title}
-                      />
-                      <ButtonWithReactions
-                        eventId={video.id}
-                        authorPubkey={video.pubkey}
-                        kind={video.kind}
-                      />
-                      {/*
-                      <FollowButton pubkey={video.pubkey} />*/}
-                      <ShareButton
-                        shareOpen={shareOpen}
-                        setShareOpen={setShareOpen}
-                        shareUrl={shareUrl}
-                        includeTimestamp={includeTimestamp}
-                        setIncludeTimestamp={setIncludeTimestamp}
-                        shareLinks={shareLinks}
-                      />
-                      {/* Dropdown menu for video actions */}
-                      {user?.pubkey === video.pubkey && (
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="secondary" aria-label="More actions">
-                              <MoreVertical className="w-5 h-5" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" side="top">
-                            <DropdownMenuItem onSelect={() => setShowDeleteDialog(true)}>
-                              <TrashIcon className="w-5 h-5" />
-                              &nbsp; Delete Video
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      )}
-                    </div>
-                  </div>
-
-                  <Separator />
-
-                  {/*video &&
-                    (video.dimensions || (video.size && video.size > 0)) && (
-                      <div className="text-sm text-muted-foreground space-x-4">
-                        {video.dimensions && <span>{video.dimensions}</span>}
-                        {video.size && video.size > 0 && (
-                          <span>{formatFileSize(video.size)}</span>
-                        )}
-                      </div>
-                    )*/}
-
-                  {video && video.tags.length > 0 && (
-                    <div className="flex flex-wrap gap-2">
-                      {video.tags.slice(20).map(tag => (
-                        <Badge key={tag} variant="secondary">
-                          {tag}
-                        </Badge>
-                      ))}
-                    </div>
-                  )}
-
-                  {video?.description && (
-                    <CollapsibleText text={video.description} className="text-muted-foreground" />
-                  )}
-                </div>
-                {/* Delete confirmation dialog */}
-                <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>Delete Video?</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        Are you sure you want to delete this video? This action cannot be undone. A
-                        deletion event will be published to all relays.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
-                      <AlertDialogAction
-                        className="bg-red-600 hover:bg-red-700"
-                        disabled={isDeleting}
-                        onClick={async () => {
-                          if (!video) return
-                          await publish({
-                            event: {
-                              kind: 5, // NIP-9 deletion event
-                              content: 'Deleted by author',
-                              tags: [['e', video.id]],
-                              created_at: nowInSecs(),
-                            },
-                            relays: config.relays.map(r => r.url),
-                          })
-                          setShowDeleteDialog(false)
-                          navigate('/')
-                        }}
-                      >
-                        {isDeleting ? 'Deleting...' : 'Delete'}
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
               </div>
-            )
-          )}
-
-          {video && (
-            <div className="p-4">
-              <VideoComments videoId={video.id} authorPubkey={video.pubkey} link={video.link} />
             </div>
-          )}
-        </div>
-
-        <div className="w-full lg:w-96 p-2 md:p-0 space-y-4">
-          {video && blossomServerCount === 1 && (
-            <Alert>
-              <AlertCircle className="h-4 w-4" />
-              <AlertTitle>Limited Availability</AlertTitle>
-              <AlertDescription className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                <span className="flex-1">
-                  This video is only available on 1 blossom server. Consider mirroring it to your
-                  servers.
-                </span>
-                <Button
-                  onClick={handleMirror}
-                  disabled={false}
-                  size="sm"
-                  className="sm:ml-4 shrink-0 sm:self-center"
-                >
-                  Mirror
-                </Button>
-              </AlertDescription>
-            </Alert>
-          )}
-          <VideoSuggestions
-            currentVideoId={video?.id}
-            authorPubkey={video?.pubkey}
-            currentVideoType={video?.type}
-            relays={relaysToUse}
-          />
-        </div>
+          </div>
+        ) : (
+          <div className="w-full lg:w-96 p-2 md:p-0 space-y-4">
+            {renderSuggestionsAlert()}
+            <VideoSuggestions
+              currentVideoId={video?.id}
+              authorPubkey={video?.pubkey}
+              currentVideoType={video?.type}
+              relays={relaysToUse}
+            />
+          </div>
+        )}
       </div>
     </div>
   )

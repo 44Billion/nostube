@@ -8,7 +8,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { VideoGrid } from '@/components/VideoGrid'
 import { VideoGridSkeleton } from '@/components/VideoGridSkeleton'
 import { InfiniteScrollTrigger } from '@/components/InfiniteScrollTrigger'
-import { useProfile, useUserPlaylists, type Playlist, useAppContext, useInfiniteScroll, useReadRelays } from '@/hooks'
+import {
+  useProfile,
+  useUserPlaylists,
+  type Playlist,
+  useAppContext,
+  useInfiniteScroll,
+  useReadRelays,
+} from '@/hooks'
 import { useInfiniteTimeline } from '@/nostr/useInfiniteTimeline'
 import { eventStore } from '@/nostr/core'
 import { TimelineLoader } from 'applesauce-loaders/loaders'
@@ -85,7 +92,7 @@ export function AuthorPage() {
   useEffect(() => {
     if (!pubkey) return
     const { pool } = config
-    
+
     const addressLoader = createAddressLoader(pool, {
       eventStore: eventStoreInstance,
     })
@@ -99,7 +106,7 @@ export function AuthorPage() {
       next: (event: any) => {
         if (event) eventStoreInstance.add(event)
       },
-      error: (err: any) => console.warn('Failed to load author mailboxes:', err)
+      error: (err: any) => console.warn('Failed to load author mailboxes:', err),
     })
 
     return () => sub.unsubscribe()
@@ -107,7 +114,10 @@ export function AuthorPage() {
 
   // Subscribe to author's NIP-65 mailboxes to get their outbox relays
   const authorMailboxes = useObservableState(
-    useMemo(() => pubkey ? eventStoreInstance.mailboxes(pubkey) : undefined, [eventStoreInstance, pubkey]),
+    useMemo(
+      () => (pubkey ? eventStoreInstance.mailboxes(pubkey) : undefined),
+      [eventStoreInstance, pubkey]
+    ),
     { inboxes: [], outboxes: [] }
   )
 

@@ -6,7 +6,7 @@ import { useAppContext } from './useAppContext'
  */
 export function useWriteRelays(): string[] {
   const { config } = useAppContext()
-  
+
   return useMemo(
     () => config.relays.filter(r => r.tags.includes('write')).map(r => r.url),
     [config.relays]

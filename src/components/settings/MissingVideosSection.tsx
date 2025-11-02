@@ -8,20 +8,16 @@ import { formatDistance } from 'date-fns'
 import { RefreshCw, Trash2 } from 'lucide-react'
 
 export function MissingVideosSection() {
-  const {
-    getAllMissingVideos,
-    clearMissingVideo,
-    clearAllMissing,
-    getMissingCount,
-  } = useMissingVideos()
+  const { getAllMissingVideos, clearMissingVideo, clearAllMissing, getMissingCount } =
+    useMissingVideos()
 
   const missingVideos = getAllMissingVideos()
   const missingCount = getMissingCount()
   const entries = Object.entries(missingVideos)
-  
+
   // Use state for current time to avoid impure function calls during render
   const [now, setNow] = useState(() => Date.now())
-  
+
   useEffect(() => {
     // Update every minute to refresh retry status
     const interval = setInterval(() => {
@@ -36,17 +32,25 @@ export function MissingVideosSection() {
     return `Retry in ${formatDistance(retryAfter, now)}`
   }
 
-  const getStatusBadge = (video: { failedAt: number; retryAfter?: number; attemptCount: number }) => {
+  const getStatusBadge = (video: {
+    failedAt: number
+    retryAfter?: number
+    attemptCount: number
+  }) => {
     const isPermanent = now - video.failedAt > 7 * 24 * 60 * 60 * 1000 // 7 days
-    
+
     if (isPermanent) {
       return <Badge variant="destructive">Permanent</Badge>
     }
-    
+
     if (video.retryAfter && now >= video.retryAfter) {
-      return <Badge variant="default" className="bg-green-500">Ready to Retry</Badge>
+      return (
+        <Badge variant="default" className="bg-green-500">
+          Ready to Retry
+        </Badge>
+      )
     }
-    
+
     return <Badge variant="secondary">Cooldown</Badge>
   }
 
