@@ -6,9 +6,11 @@ import { formatDuration } from '../lib/formatDuration'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { cn, imageProxy, imageProxyVideoPreview } from '@/lib/utils'
 import { Skeleton } from '@/components/ui/skeleton'
-import React, { useRef, useState } from 'react'
+import React, { useRef, useState, useMemo } from 'react'
 import { PlayProgressBar } from './PlayProgressBar'
 import { useProfile } from '@/hooks/useProfile'
+import { useEventStore } from 'applesauce-react/hooks'
+import { nprofileFromEvent } from '@/lib/nprofile'
 
 interface VideoCardProps {
   video: VideoEvent
@@ -19,6 +21,11 @@ interface VideoCardProps {
 export function VideoCard({ video, hideAuthor, format = 'square' }: VideoCardProps) {
   const metadata = useProfile({ pubkey: video.pubkey })
   const name = metadata?.display_name || metadata?.name || video?.pubkey.slice(0, 8)
+  const eventStore = useEventStore()
+
+  // Get the event from the store to access seenRelays
+  const event = useMemo(() => eventStore.getEvent(video.id), [eventStore, video.id])
+  const authorNprofile = useMemo(() => nprofileFromEvent(video.pubkey, event), [video.pubkey, event])
 
   const aspectRatio =
     format == 'vertical' ? 'aspect-[2/3]' : format == 'square' ? 'aspect-[1/1]' : 'aspect-video'
@@ -115,7 +122,7 @@ export function VideoCard({ video, hideAuthor, format = 'square' }: VideoCardPro
         <div className="pt-3">
           <div className="flex gap-3">
             {!hideAuthor && (
-              <Link to={`/author/${nip19.npubEncode(video.pubkey)}`} className="shrink-0">
+              <Link to={`/author/${authorNprofile}`} className="shrink-0">
                 <Avatar className="h-10 w-10">
                   <AvatarImage src={imageProxy(metadata?.picture)} alt={name} />
                   <AvatarFallback>{name.charAt(0)}</AvatarFallback>
@@ -129,7 +136,7 @@ export function VideoCard({ video, hideAuthor, format = 'square' }: VideoCardPro
 
               {!hideAuthor && (
                 <Link
-                  to={`/author/${nip19.npubEncode(video.pubkey)}`}
+                  to={`/author/${authorNprofile}`}
                   className="block text-sm mt-1 text-muted-foreground hover:text-primary"
                 >
                   {name}

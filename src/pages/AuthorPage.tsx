@@ -15,6 +15,9 @@ import { useAppContext } from '@/hooks/useAppContext'
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll'
 import { useReadRelays } from '@/hooks/useReadRelays'
 import { authorVideoLoader } from '@/nostr/loaders'
+import { useEventStore } from 'applesauce-react/hooks'
+import { useObservableState } from 'observable-hooks'
+import { createAddressLoader } from 'applesauce-loaders/loaders'
 
 type Tabs = 'videos' | 'shorts' | 'tags' | string
 
@@ -52,10 +55,34 @@ function AuthorProfile({ pubkey, joinedDate }: { pubkey: string; joinedDate: Dat
 }
 
 export function AuthorPage() {
-  const { npub } = useParams<{ npub: string }>()
+  const { nprofile } = useParams<{ nprofile: string }>()
   const [activeTab, setActiveTab] = useState<Tabs>('videos')
 
-  const pubkey = nip19.decode(npub ?? '').data as string
+  // Decode nprofile to get pubkey and relays
+  const profileData = useMemo(() => {
+    if (!nprofile) return { pubkey: '', relays: [] }
+    try {
+      const decoded = nip19.decode(nprofile)
+      if (decoded.type === 'nprofile') {
+        return {
+          pubkey: decoded.data.pubkey,
+          relays: decoded.data.relays || []
+        }
+      } else if (decoded.type === 'npub') {
+        // Fallback for old npub links
+        return {
+          pubkey: decoded.data as string,
+          relays: []
+        }
+      }
+      return { pubkey: '', relays: [] }
+    } catch {
+      return { pubkey: '', relays: [] }
+    }
+  }, [nprofile])
+
+  const pubkey = profileData.pubkey
+  const nprofileRelays = profileData.relays
 
   // State for selected playlist videos
   const [playlistVideos, setPlaylistVideos] = useState<Record<string, any[]>>({})
@@ -65,7 +92,55 @@ export function AuthorPage() {
   // Fetch playlists for this author
   const { data: playlists = [] } = useUserPlaylists(pubkey)
   const { config } = useAppContext()
-  const relays = useReadRelays()
+  const readRelays = useReadRelays()
+  const eventStoreInstance = useEventStore()
+
+  // Combine nprofile relays with user's read relays for loading NIP-65 event
+  const loadRelays = useMemo(() => {
+    return [...new Set([...nprofileRelays, ...readRelays])]
+  }, [nprofileRelays, readRelays])
+
+  // Load author's NIP-65 mailboxes event (kind 10002) from relays
+  useEffect(() => {
+    if (!pubkey) return
+    const { pool } = config
+    
+    const addressLoader = createAddressLoader(pool, {
+      eventStore: eventStoreInstance,
+    })
+
+    const sub = addressLoader({
+      kind: 10002,
+      pubkey,
+      identifier: '',
+      relays: loadRelays,
+    }).subscribe({
+      next: (event: any) => {
+        if (event) eventStoreInstance.add(event)
+      },
+      error: (err: any) => console.warn('Failed to load author mailboxes:', err)
+    })
+
+    return () => sub.unsubscribe()
+  }, [pubkey, loadRelays, config, eventStoreInstance])
+
+  // Subscribe to author's NIP-65 mailboxes to get their outbox relays
+  const authorMailboxes = useObservableState(
+    useMemo(() => pubkey ? eventStoreInstance.mailboxes(pubkey) : undefined, [eventStoreInstance, pubkey]),
+    { inboxes: [], outboxes: [] }
+  )
+
+  // Combine all relay sources (prioritize in order: nprofile relays, author's outbox, user's read relays)
+  const relays = useMemo(() => {
+    const authorOutboxes = authorMailboxes?.outboxes || []
+    console.log(`[AuthorPage] nprofile relays:`, nprofileRelays)
+    console.log(`[AuthorPage] Author outbox relays for ${pubkey.slice(0, 8)}:`, authorOutboxes)
+    console.log(`[AuthorPage] User read relays:`, readRelays)
+    // Combine and deduplicate (order matters - first ones are tried first)
+    const combined = [...new Set([...nprofileRelays, ...authorOutboxes, ...readRelays])]
+    console.log(`[AuthorPage] Combined relays (${combined.length}):`, combined)
+    return combined
+  }, [nprofileRelays, authorMailboxes, readRelays, pubkey])
 
   // Helper to fetch full video events for a playlist
   const fetchPlaylistVideos = useCallback(

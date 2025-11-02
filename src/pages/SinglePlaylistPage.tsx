@@ -11,6 +11,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { imageProxy } from '@/lib/utils'
 import { useMemo } from 'react'
 import { useProfile } from '@/hooks/useProfile'
+import { nprofileFromPubkey } from '@/lib/nprofile'
 
 function isNeventPointer(ptr: unknown): ptr is { id: string } {
   return typeof ptr === 'object' && ptr !== null && 'id' in ptr
@@ -99,7 +100,7 @@ export default function SinglePlaylistPage() {
         <h1 className="text-2xl font-bold flex-grow">{playlistTitle}</h1>
 
         <Link
-          to={`/author/${nip19.npubEncode(playlistEvent.pubkey)}`}
+          to={`/author/${nprofileFromPubkey(playlistEvent.pubkey, readRelays)}`}
           className="shrink-0 flex flex-row gap-2 items-center"
         >
           <Avatar className="h-10 w-10">

@@ -3,6 +3,7 @@ import { getTypeForKind, VideoType } from '@/lib/video-types'
 import { blurHashToDataURL } from '@/workers/blurhashDataURL'
 import { nip19 } from 'nostr-tools'
 import type { BlossomServer } from '@/contexts/AppContext'
+import { getSeenRelays } from 'applesauce-core/helpers/relays'
 
 // Define a simple Event interface that matches what we need
 interface Event {
@@ -161,6 +162,9 @@ export function processEvent(
   relays: string[],
   blossomServers?: BlossomServer[]
 ): VideoEvent | undefined {
+  // Get relays from applesauce's seenRelays tracking
+  const seenRelays = getSeenRelays(event)
+  const eventRelays = seenRelays ? Array.from(seenRelays) : relays
   // First check for imeta tag
   const imetaTag = event.tags.find(t => t[0] === 'imeta')
   const contentWarning = event.tags.find(t => t[0] == 'content-warning')?.[1]
@@ -256,7 +260,7 @@ export function processEvent(
       link: nip19.neventEncode({
         kind: event.kind,
         id: event.id,
-        relays,
+        relays: eventRelays,
       }),
       type: getTypeForKind(event.kind),
       contentWarning,
@@ -314,7 +318,7 @@ export function processEvent(
       link: nip19.neventEncode({
         kind: event.kind,
         id: event.id,
-        relays,
+        relays: eventRelays,
       }),
       type: getTypeForKind(event.kind),
       contentWarning,

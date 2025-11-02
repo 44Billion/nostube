@@ -121,7 +121,20 @@ export function VideoPage() {
   const eventPointer = useMemo(() => nip19.decode(nevent ?? '').data as EventPointer, [nevent])
   const { markVideoAsMissing, clearMissingVideo, isVideoMissing } = useMissingVideos()
 
-  const loader = useMemo(() => createEventLoader(pool, { eventStore }), [pool, eventStore])
+  // Get relays from nevent if available, otherwise use config relays
+  const relaysToUse = useMemo(() => {
+    const readRelays = config.relays.filter(r => r.tags.includes('read')).map(r => r.url)
+    const neventRelays = eventPointer.relays || []
+    // Combine nevent relays (prioritized) with user read relays
+    const combined = [...neventRelays, ...readRelays]
+    // Remove duplicates
+    return [...new Set(combined)]
+  }, [eventPointer, config.relays])
+
+  const loader = useMemo(
+    () => createEventLoader(pool, { eventStore, relays: relaysToUse }),
+    [pool, eventStore, relaysToUse]
+  )
 
   // Use EventStore to get the video event with fallback to loader
   const videoObservable = useMemo(() => {
@@ -259,6 +272,9 @@ export function VideoPage() {
 
   // Handle mirror action
   const handleMirror = async () => {
+    alert('Mirror functionality is not implemented yet. This feature will allow you to copy the video to your configured blossom servers for better redundancy.')
+    
+    /* TODO: Uncomment when mirror functionality is ready
     if (!video || !video.urls || video.urls.length === 0 || !user) return
 
     // Find the first non-proxy blossom URL
@@ -312,6 +328,7 @@ export function VideoPage() {
     } finally {
       setIsMirroring(false)
     }
+    */
   }
 
   // Build share URL
@@ -441,7 +458,7 @@ export function VideoPage() {
 
                   <div className="flex items-start justify-between">
                     <Link
-                      to={`/author/${nip19.npubEncode(video?.pubkey || '')}`}
+                      to={`/author/${nip19.nprofileEncode({ pubkey: video?.pubkey || '', relays: relaysToUse })}`}
                       className="flex items-center gap-4"
                     >
                       <Avatar>
@@ -583,18 +600,11 @@ export function VideoPage() {
                 </span>
                 <Button
                   onClick={handleMirror}
-                  disabled={isMirroring || !user}
+                  disabled={false}
                   size="sm"
                   className="sm:ml-4 shrink-0 sm:self-center"
                 >
-                  {isMirroring ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Mirroring...
-                    </>
-                  ) : (
-                    'Mirror'
-                  )}
+                  Mirror
                 </Button>
               </AlertDescription>
             </Alert>
@@ -603,6 +613,7 @@ export function VideoPage() {
             currentVideoId={video?.id}
             authorPubkey={video?.pubkey}
             currentVideoType={video?.type}
+            relays={relaysToUse}
           />
         </div>
       </div>

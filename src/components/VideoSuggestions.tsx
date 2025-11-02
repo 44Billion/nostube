@@ -79,37 +79,73 @@ interface VideoSuggestionsProps {
   currentVideoId?: string
   authorPubkey?: string
   currentVideoType?: VideoType
+  relays?: string[] // Relays from nevent or other sources
 }
 
 export function VideoSuggestions({
   currentVideoId,
   currentVideoType,
   authorPubkey,
+  relays,
 }: VideoSuggestionsProps) {
   const eventStore = useEventStore()
   const { pool, config } = useAppContext()
   const blockedPubkeys = useReportedPubkeys()
   const readRelays = useReadRelays()
-  // Load the shared event from the pointer
+
+  // Combine provided relays with config relays (prioritize provided relays)
+  const relaysToUse = useMemo(() => {
+    const configRelays = config.relays.map(r => r.url)
+    const combined = relays ? [...relays, ...configRelays] : configRelays
+    // Remove duplicates
+    const deduplicated = [...new Set(combined)]
+    console.log('[VideoSuggestions] Relays to use:', deduplicated)
+    return deduplicated
+  }, [relays, config.relays])
+
+  // Load events from the relays
   useEffect(() => {
-    if (!authorPubkey) return
-    const playlistLoader = createTimelineLoader(
-      pool,
-      config.relays.map(r => r.url),
-      [
-        {
-          kinds: getKindsForType('all'),
-          authors: authorPubkey ? [authorPubkey] : [],
-        },
-        {
-          kinds: currentVideoType ? getKindsForType(currentVideoType) : getKindsForType('all'),
-          limit: 30,
-        },
-      ]
-    )
-    const sub = playlistLoader().subscribe()
+    if (relaysToUse.length === 0) {
+      console.log('[VideoSuggestions] No relays available, skipping load')
+      return
+    }
+    
+    console.log('[VideoSuggestions] Loading suggestions from relays:', relaysToUse)
+    console.log('[VideoSuggestions] Author pubkey:', authorPubkey)
+    console.log('[VideoSuggestions] Video type:', currentVideoType)
+    
+    const filters = [
+      {
+        kinds: currentVideoType ? getKindsForType(currentVideoType) : getKindsForType('all'),
+        limit: 30,
+      },
+    ]
+    
+    // Add author filter if we have an author
+    if (authorPubkey) {
+      filters.unshift({
+        kinds: getKindsForType('all'),
+        authors: [authorPubkey],
+        limit: 30,
+      })
+    }
+    
+    console.log('[VideoSuggestions] Filters:', filters)
+    
+    const playlistLoader = createTimelineLoader(pool, relaysToUse, filters, {
+      eventStore,
+      limit: 30,
+    })
+    const sub = playlistLoader().subscribe({
+      next: (events) => {
+        console.log('[VideoSuggestions] Loaded events:', events.length)
+      },
+      error: (err) => {
+        console.error('[VideoSuggestions] Error loading events:', err)
+      }
+    })
     return () => sub.unsubscribe()
-  }, [authorPubkey, currentVideoType])
+  }, [authorPubkey, currentVideoType, relaysToUse, pool, eventStore])
 
   // Use EventStore timeline for author-specific suggestions
   const authorSuggestionsObservable = eventStore.timeline([

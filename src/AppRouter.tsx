@@ -100,7 +100,7 @@ export function AppRouter() {
             }
           />
           <Route
-            path="/author/:npub"
+            path="/author/:nprofile"
             element={
               <Suspense fallback={<PageLoader />}>
                 <AuthorPage />

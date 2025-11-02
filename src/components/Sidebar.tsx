@@ -5,10 +5,18 @@ import { useCurrentUser } from '@/hooks/useCurrentUser'
 import { useAppContext } from '@/hooks/useAppContext'
 import { nip19 } from 'nostr-tools'
 import { cn } from '@/lib/utils'
+import { useReadRelays } from '@/hooks/useReadRelays'
+import { useMemo } from 'react'
 
 export function Sidebar() {
   const { user } = useCurrentUser()
   const { config: _config, toggleSidebar } = useAppContext()
+  const readRelays = useReadRelays()
+
+  const userNprofile = useMemo(() => {
+    if (!user?.pubkey) return ''
+    return nip19.nprofileEncode({ pubkey: user.pubkey, relays: readRelays.slice(0, 5) })
+  }, [user?.pubkey, readRelays])
 
   const navigationItems = [
     { name: 'Home', icon: Home, href: '/' },
@@ -22,7 +30,7 @@ export function Sidebar() {
     {
       name: 'Your videos',
       icon: Play,
-      href: `/author/${user?.pubkey ? nip19.npubEncode(user.pubkey) : ''}`,
+      href: `/author/${userNprofile}`,
     },
     { name: 'Watch later', icon: Clock, href: '/watch-later', disabled: true },
     { name: 'Liked videos', icon: ThumbsUp, href: '/liked-videos' },

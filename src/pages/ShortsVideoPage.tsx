@@ -20,6 +20,7 @@ import { imageProxy } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { getKindsForType } from '@/lib/video-types'
 import { useReportedPubkeys } from '@/hooks/useReportedPubkeys'
+import { nprofileFromEvent } from '@/lib/nprofile'
 
 function ShortVideoItem({
   video,
@@ -36,6 +37,11 @@ function ShortVideoItem({
   const videoRef = useRef<HTMLDivElement>(null)
   const videoElementRef = useRef<HTMLVideoElement>(null)
   const [currentUrlIndex, setCurrentUrlIndex] = useState(0)
+  const eventStore = useEventStore()
+  
+  // Get the event from store to access seenRelays
+  const event = useMemo(() => eventStore.getEvent(video.id), [eventStore, video.id])
+  const authorNprofile = useMemo(() => nprofileFromEvent(video.pubkey, event), [video.pubkey, event])
 
   useEffect(() => {
     if (!videoRef.current) return
@@ -133,7 +139,7 @@ function ShortVideoItem({
         {/* Right sidebar with interactions */}
         <div className="absolute right-4 bottom-24 flex flex-col items-center gap-4 z-10">
           {/* Profile picture */}
-          <Link to={`/author/${nip19.npubEncode(video.pubkey)}`}>
+          <Link to={`/author/${authorNprofile}`}>
             <Avatar className="h-12 w-12 border-2 border-white cursor-pointer hover:scale-110 transition-transform">
               <AvatarImage src={imageProxy(authorPicture)} alt={authorName} />
               <AvatarFallback>
@@ -187,14 +193,14 @@ function ShortVideoItem({
           <div className="w-full" style={{ maxWidth: 'calc(100vh * 9 / 16)' }}>
             {/* Author info */}
             <div className="flex items-center gap-3 mb-3">
-              <Link to={`/author/${nip19.npubEncode(video.pubkey)}`}>
+              <Link to={`/author/${authorNprofile}`}>
                 <Avatar className="h-10 w-10 border-2 border-white">
                   <AvatarImage src={imageProxy(authorPicture)} alt={authorName} />
                   <AvatarFallback>{authorName?.charAt(0) || '?'}</AvatarFallback>
                 </Avatar>
               </Link>
               <div className="flex-1 min-w-0">
-                <Link to={`/author/${nip19.npubEncode(video.pubkey)}`}>
+                <Link to={`/author/${authorNprofile}`}>
                   <div className="text-white font-semibold truncate">{authorName}</div>
                 </Link>
                 <div className="text-white/70 text-sm">
@@ -251,7 +257,19 @@ export function ShortsVideoPage() {
     }
   }, [nevent])
 
-  const loader = useMemo(() => createEventLoader(pool, { eventStore }), [pool, eventStore])
+  // Get relays from nevent if available, otherwise use config relays
+  const relaysToUse = useMemo(() => {
+    const neventRelays = eventPointer?.relays || []
+    // Combine nevent relays (prioritized) with user read relays
+    const combined = [...neventRelays, ...readRelays]
+    // Remove duplicates
+    return [...new Set(combined)]
+  }, [eventPointer, readRelays])
+
+  const loader = useMemo(
+    () => createEventLoader(pool, { eventStore, relays: relaysToUse }),
+    [pool, eventStore, relaysToUse]
+  )
 
   // Use EventStore to get the initial video event
   const videoObservable = useMemo(() => {
