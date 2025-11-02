@@ -6,18 +6,12 @@ import { ProfilePointer } from 'nostr-tools/nip19'
 import { Model } from 'applesauce-core'
 import { defer, EMPTY, ignoreElements, merge, of } from 'rxjs'
 import { useAppContext } from './useAppContext'
-import { useMemo } from 'react'
-
-// Create a relay pool to make relay connections
+import { useReadRelays } from './useReadRelays'
 
 export function useProfile(user?: ProfilePointer): ProfileContent | undefined {
   const eventStore = useEventStore()
-  const { pool, config } = useAppContext()
-
-  const readRelays = useMemo(
-    () => config.relays.filter(r => r.tags.includes('read')).map(r => r.url),
-    [config.relays]
-  )
+  const { pool } = useAppContext()
+  const readRelays = useReadRelays()
 
   const addressLoader = createAddressLoader(pool, {
     eventStore,

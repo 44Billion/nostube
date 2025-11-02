@@ -1,7 +1,8 @@
 import { VideoGrid } from '@/components/VideoGrid'
-import { Loader2 } from 'lucide-react'
+import { InfiniteScrollTrigger } from '@/components/InfiniteScrollTrigger'
 import { useFollowedAuthors } from '@/hooks/useFollowedAuthors'
-import { useInView } from 'react-intersection-observer'
+import { useInfiniteScroll } from '@/hooks/useInfiniteScroll'
+import { useReadRelays } from '@/hooks/useReadRelays'
 import { useMemo, useEffect, useState, useCallback } from 'react'
 import { useEventStore, useObservableMemo } from 'applesauce-react/hooks'
 import { useAppContext } from '@/hooks/useAppContext'
@@ -25,9 +26,7 @@ export function SubscriptionsPage() {
   const [loading, setLoading] = useState(false)
   const [hasLoaded, setHasLoaded] = useState(false)
 
-  const readRelays = useMemo(() => {
-    return config.relays.filter(r => r.tags.includes('read')).map(r => r.url)
-  }, [config.relays])
+  const readRelays = useReadRelays()
 
   // Create filter for all followed authors
   const filters = useMemo(() => {
@@ -89,12 +88,6 @@ export function SubscriptionsPage() {
     setHasLoaded(false)
   }, [followedPubkeys])
 
-  // Intersection observer for infinite loading (load more pages)
-  const { ref: loadMoreRef, inView } = useInView({
-    threshold: 0,
-    rootMargin: '200px',
-  })
-
   const loadMore = useCallback(() => {
     if (!filters || !pool || loading) return () => {}
 
@@ -130,13 +123,11 @@ export function SubscriptionsPage() {
     }
   }, [filters, pool, readRelays, eventStore, loading, videos])
 
-  // Trigger load more when in view
-  useEffect(() => {
-    if (inView && !loading && videos.length > 0) {
-      const cleanup = loadMore()
-      return cleanup
-    }
-  }, [inView, loading, videos.length, loadMore])
+  const { ref } = useInfiniteScroll({
+    onLoadMore: loadMore,
+    loading,
+    exhausted: false,
+  })
 
   const isLoadingInitial = loading && videos.length === 0
   const isLoadingMore = loading && videos.length > 0
@@ -150,21 +141,19 @@ export function SubscriptionsPage() {
         layoutMode="auto"
       />
 
-      {/* Infinite scroll trigger */}
-      <div ref={loadMoreRef} className="w-full py-8 flex items-center justify-center">
-        {isLoadingMore && (
-          <div className="flex items-center gap-2 text-muted-foreground">
-            <Loader2 className="h-4 w-4 animate-spin" />
-            Loading more videos...
-          </div>
-        )}
-        {followedPubkeys.length === 0 && (
-          <div className="text-muted-foreground">Follow some authors to see their videos here.</div>
-        )}
-        {videos.length === 0 && !loading && followedPubkeys.length > 0 && (
-          <div className="text-muted-foreground">No videos found from your subscriptions.</div>
-        )}
-      </div>
+      <InfiniteScrollTrigger
+        triggerRef={ref}
+        loading={isLoadingMore}
+        exhausted={false}
+        itemCount={videos.length}
+        emptyMessage={
+          followedPubkeys.length === 0
+            ? 'Follow some authors to see their videos here.'
+            : 'No videos found from your subscriptions.'
+        }
+        loadingMessage="Loading more videos..."
+        exhaustedMessage=""
+      />
     </div>
   )
 }

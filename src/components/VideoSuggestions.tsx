@@ -11,6 +11,7 @@ import { useEffect, useMemo } from 'react'
 import { imageProxyVideoPreview } from '@/lib/utils'
 import { useProfile } from '@/hooks/useProfile'
 import { useAppContext } from '@/hooks/useAppContext'
+import { useReadRelays } from '@/hooks/useReadRelays'
 import { createTimelineLoader } from 'applesauce-loaders/loaders'
 
 function formatDuration(seconds: number): string {
@@ -88,10 +89,7 @@ export function VideoSuggestions({
   const eventStore = useEventStore()
   const { pool, config } = useAppContext()
   const blockedPubkeys = useReportedPubkeys()
-  const readRelays = useMemo(
-    () => config.relays.filter(r => r.tags.includes('read')).map(r => r.url),
-    [config.relays]
-  )
+  const readRelays = useReadRelays()
   // Load the shared event from the pointer
   useEffect(() => {
     if (!authorPubkey) return

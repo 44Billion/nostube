@@ -4,15 +4,17 @@ import { nip19 } from 'nostr-tools'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { VideoGrid } from '@/components/VideoGrid'
+import { VideoGridSkeleton } from '@/components/VideoGridSkeleton'
+import { InfiniteScrollTrigger } from '@/components/InfiniteScrollTrigger'
 import { useProfile } from '@/hooks/useProfile'
 import { useUserPlaylists, Playlist } from '@/hooks/usePlaylist'
 import { useInfiniteTimeline } from '@/nostr/useInfiniteTimeline'
 import { eventStore } from '@/nostr/core'
 import { TimelineLoader } from 'applesauce-loaders/loaders'
 import { useAppContext } from '@/hooks/useAppContext'
-import { useInView } from 'react-intersection-observer'
+import { useInfiniteScroll } from '@/hooks/useInfiniteScroll'
+import { useReadRelays } from '@/hooks/useReadRelays'
 import { authorVideoLoader } from '@/nostr/loaders'
-import { Loader2 } from 'lucide-react'
 
 type Tabs = 'videos' | 'shorts' | 'tags' | string
 
@@ -63,10 +65,7 @@ export function AuthorPage() {
   // Fetch playlists for this author
   const { data: playlists = [] } = useUserPlaylists(pubkey)
   const { config } = useAppContext()
-  const relays = useMemo(
-    () => config.relays.filter(r => r.tags.includes('read')).map(r => r.url),
-    [config.relays]
-  )
+  const relays = useReadRelays()
 
   // Helper to fetch full video events for a playlist
   const fetchPlaylistVideos = useCallback(
@@ -150,18 +149,12 @@ export function AuthorPage() {
   }, [relays, pubkey])
 
   const { videos: allVideos, loading, exhausted, loadMore } = useInfiniteTimeline(loader, relays)
-  // Intersection observer for infinite loading
-  const { ref: loadMoreRef, inView } = useInView({
-    threshold: 0,
-    rootMargin: '200px',
-  })
 
-  // Trigger load more when in view
-  React.useEffect(() => {
-    if (inView && !exhausted && !loading) {
-      loadMore()
-    }
-  }, [exhausted, loading, loadMore, inView])
+  const { ref } = useInfiniteScroll({
+    onLoadMore: loadMore,
+    loading,
+    exhausted,
+  })
 
   // Get unique tags from all videos
   const uniqueTags = useMemo(
@@ -251,15 +244,7 @@ export function AuthorPage() {
 
             <TabsContent value="videos" className="mt-6">
               {loading && videos.length === 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                  {Array.from({ length: 8 }).map((_, i) => (
-                    <div key={i} className="space-y-2">
-                      <div className="aspect-video bg-muted animate-pulse rounded-lg" />
-                      <div className="h-4 bg-muted animate-pulse rounded w-3/4" />
-                      <div className="h-3 bg-muted animate-pulse rounded w-1/2" />
-                    </div>
-                  ))}
-                </div>
+                <VideoGridSkeleton count={8} />
               ) : (
                 <>
                   <VideoGrid
@@ -269,36 +254,22 @@ export function AuthorPage() {
                     layoutMode="auto"
                   />
 
-                  {/* Infinite scroll trigger */}
-                  <div ref={loadMoreRef} className="w-full py-8 flex items-center justify-center">
-                    {loading && videos.length > 0 && (
-                      <div className="flex items-center gap-2 text-muted-foreground">
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                        Loading more videos...
-                      </div>
-                    )}
-                    {!loading && exhausted && videos.length > 0 && (
-                      <div className="text-muted-foreground">No more videos to load.</div>
-                    )}
-                    {videos.length === 0 && !loading && (
-                      <div className="text-muted-foreground">No videos found.</div>
-                    )}
-                  </div>
+                  <InfiniteScrollTrigger
+                    triggerRef={ref}
+                    loading={loading && videos.length > 0}
+                    exhausted={exhausted}
+                    itemCount={videos.length}
+                    emptyMessage="No videos found."
+                    loadingMessage="Loading more videos..."
+                    exhaustedMessage="No more videos to load."
+                  />
                 </>
               )}
             </TabsContent>
 
             <TabsContent value="shorts" className="mt-6">
               {loading && shorts.length === 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                  {Array.from({ length: 8 }).map((_, i) => (
-                    <div key={i} className="space-y-2">
-                      <div className="aspect-video bg-muted animate-pulse rounded-lg" />
-                      <div className="h-4 bg-muted animate-pulse rounded w-3/4" />
-                      <div className="h-3 bg-muted animate-pulse rounded w-1/2" />
-                    </div>
-                  ))}
-                </div>
+                <VideoGridSkeleton count={8} />
               ) : (
                 <>
                   <VideoGrid
@@ -308,21 +279,15 @@ export function AuthorPage() {
                     layoutMode="vertical"
                   />
 
-                  {/* Infinite scroll trigger */}
-                  <div ref={loadMoreRef} className="w-full py-8 flex items-center justify-center">
-                    {loading && shorts.length > 0 && (
-                      <div className="flex items-center gap-2 text-muted-foreground">
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                        Loading more videos...
-                      </div>
-                    )}
-                    {!loading && exhausted && shorts.length > 0 && (
-                      <div className="text-muted-foreground">No more videos to load.</div>
-                    )}
-                    {shorts.length === 0 && !loading && (
-                      <div className="text-muted-foreground">No videos found.</div>
-                    )}
-                  </div>
+                  <InfiniteScrollTrigger
+                    triggerRef={ref}
+                    loading={loading && shorts.length > 0}
+                    exhausted={exhausted}
+                    itemCount={shorts.length}
+                    emptyMessage="No shorts found."
+                    loadingMessage="Loading more shorts..."
+                    exhaustedMessage="No more shorts to load."
+                  />
                 </>
               )}
             </TabsContent>
@@ -330,15 +295,7 @@ export function AuthorPage() {
             {playlists.map(playlist => (
               <TabsContent key={playlist.identifier} value={playlist.identifier} className="mt-6">
                 {loadingPlaylist === playlist.identifier ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                    {Array.from({ length: 8 }).map((_, i) => (
-                      <div key={i} className="space-y-2">
-                        <div className="aspect-video bg-muted animate-pulse rounded-lg" />
-                        <div className="h-4 bg-muted animate-pulse rounded w-3/4" />
-                        <div className="h-3 bg-muted animate-pulse rounded w-1/2" />
-                      </div>
-                    ))}
-                  </div>
+                  <VideoGridSkeleton count={8} />
                 ) : (
                   <VideoGrid
                     videos={playlistVideos[playlist.identifier] || []}

@@ -1,6 +1,7 @@
 import { useEventStore, useObservableMemo } from 'applesauce-react/hooks'
 import { useReportedPubkeys } from './useReportedPubkeys'
 import { useAppContext } from './useAppContext'
+import { useReadRelays } from './useReadRelays'
 import { useEffect, useMemo, useState } from 'react'
 import { getKindsForType } from '@/lib/video-types'
 import { createTimelineLoader } from 'applesauce-loaders/loaders'
@@ -21,14 +22,7 @@ export default function useVideoTimeline(type: VideoType, authors?: string[]) {
   const { pool, config } = useAppContext()
   const [videosLoading, setVideosLoading] = useState(false)
 
-  // TODO we need to read the authers outbox relays here too
-  const readRelays = useMemo(() => {
-    const seq = ++logSeq
-    console.log(`[${seq}] readRelays useMemo called, config.relays:`, config.relays)
-    const relays = config.relays.filter(r => r.tags.includes('read')).map(r => r.url)
-    console.log(`[${seq}] readRelays result:`, relays)
-    return relays
-  }, [config.relays])
+  const readRelays = useReadRelays()
 
   const filters = useMemo(() => {
     const seq = ++logSeq

@@ -1,6 +1,8 @@
 import { VideoGrid } from '@/components/VideoGrid'
+import { VideoGridSkeleton } from '@/components/VideoGridSkeleton'
 import { useAppContext } from '@/hooks/useAppContext'
 import { useLikedEvents } from '@/hooks/useLikedEvents'
+import { useReadRelays } from '@/hooks/useReadRelays'
 import { useMemo, useEffect, useState, useRef } from 'react'
 import { useEventStore } from 'applesauce-react/hooks'
 import { createEventLoader } from 'applesauce-loaders/loaders'
@@ -17,9 +19,7 @@ export function LikedVideosPage() {
   const likedIdsStringRef = useRef<string>('')
   const [, forceUpdate] = useState(0)
 
-  const readRelays = useMemo(() => {
-    return config.relays.filter(r => r.tags.includes('read')).map(r => r.url)
-  }, [config.relays])
+  const readRelays = useReadRelays()
 
   // Convert likedEventIds to string for stable comparison
   const likedIdsString = useMemo(() => {
@@ -135,15 +135,7 @@ export function LikedVideosPage() {
       <div className="text-2xl font-semibold mb-4">Liked Videos</div>
 
       {isLoading && videos.length === 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {Array.from({ length: 8 }).map((_, i) => (
-            <div key={i} className="space-y-2">
-              <div className="aspect-video bg-muted animate-pulse rounded-lg" />
-              <div className="h-4 bg-muted animate-pulse rounded w-3/4" />
-              <div className="h-3 bg-muted animate-pulse rounded w-1/2" />
-            </div>
-          ))}
-        </div>
+        <VideoGridSkeleton count={8} />
       ) : (
         <>
           <VideoGrid videos={videos} isLoading={false} showSkeletons={false} layoutMode="auto" />

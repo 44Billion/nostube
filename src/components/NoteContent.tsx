@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { nip19 } from 'nostr-tools'
-import { useAuthor } from '@/hooks/useAuthor'
+import { useProfile } from '@/hooks/useProfile'
 import { genUserName } from '@/lib/genUserName'
 import { cn } from '@/lib/utils'
 
@@ -122,7 +122,7 @@ export function NoteContent({ event, className }: NoteContentProps) {
 
 // Helper component to display user mentions
 function NostrMention({ pubkey }: { pubkey: string }) {
-  const author = useAuthor(pubkey)
+  const author = useProfile({ pubkey })
   const npub = nip19.npubEncode(pubkey)
   const hasRealName = !!author?.name
   const displayName = author?.display_name || author?.name || genUserName(pubkey)
