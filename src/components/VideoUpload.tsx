@@ -438,8 +438,8 @@ export function VideoUpload() {
           servers: blossomInitalUploadServers.map(server => server.url),
           signer: async draft => await user.signer.signEvent(draft),
           options: {
-            chunkSize: 20 * 1024 * 1024, // 8MB chunks (BUD-10 default)
-            maxConcurrentChunks: 3, // Sequential uploads for better reliability
+            chunkSize: 10 * 1024 * 1024, // 10MB chunks
+            maxConcurrentChunks: 2, // 2 concurrent chunks
           },
           callbacks: {
             onProgress: progress => {
