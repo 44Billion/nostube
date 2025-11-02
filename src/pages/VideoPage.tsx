@@ -37,14 +37,18 @@ import {
 } from '@/components/ui/alert-dialog'
 import { useNostrPublish } from '@/hooks/useNostrPublish'
 import { MoreVertical, TrashIcon } from 'lucide-react'
-import { imageProxy, imageProxyVideoPreview, nowInSecs } from '@/lib/utils'
+import { imageProxy, nowInSecs } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { useProfile } from '@/hooks/useProfile'
 import { createEventLoader } from 'applesauce-loaders/loaders'
 import { AddToPlaylistButton } from '@/components/AddToPlaylistButton'
 import { ButtonWithReactions } from '@/components/ButtonWithReactions'
-import { FollowButton } from '@/components/FollowButton'
 import ShareButton from '@/components/ShareButton'
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
+import { AlertCircle, Loader2 } from 'lucide-react'
+import { mirrorBlobsToServers } from '@/lib/blossom-upload'
+import { extractBlossomHash } from '@/utils/video-event'
+import { BlobDescriptor } from 'blossom-client-sdk'
 
 // Custom hook for debounced play position storage
 function useDebouncedPlayPositionStorage(
@@ -147,7 +151,7 @@ export function VideoPage() {
     }
 
     return null
-  }, [nevent, videoEvent])
+  }, [nevent, videoEvent, config.blossomServers])
 
   const isLoading = !video && videoEvent === undefined
 
@@ -172,6 +176,7 @@ export function VideoPage() {
   const [shareOpen, setShareOpen] = useState(false)
   const [includeTimestamp, setIncludeTimestamp] = useState(false)
   const [currentPlayPos, setCurrentPlayPos] = useState(0)
+  const [isMirroring, setIsMirroring] = useState(false)
   const location = useLocation()
 
   // Compute initial play position from ?t=... param or localStorage
@@ -224,6 +229,89 @@ export function VideoPage() {
     return Math.floor(currentPlayPos)
   }
 
+  // Check if video is only available on 1 blossom server
+  const blossomServerCount = useMemo(() => {
+    if (!video || !video.urls || video.urls.length === 0) return 0
+
+    // Extract unique blossom server hostnames (exclude proxy URLs which have ?origin=)
+    const servers = new Set<string>()
+
+    for (const url of video.urls) {
+      // Skip proxy URLs (they have ?origin= query parameter)
+      if (url.includes('?origin=')) continue
+
+      try {
+        const urlObj = new URL(url)
+        const { sha256 } = extractBlossomHash(url)
+        // Only count if it's a valid blossom URL (has SHA256 hash)
+        if (sha256) {
+          servers.add(urlObj.origin)
+        }
+      } catch {
+        // Invalid URL, skip
+      }
+    }
+
+    return servers.size
+  }, [video])
+
+  // Handle mirror action
+  const handleMirror = async () => {
+    if (!video || !video.urls || video.urls.length === 0 || !user) return
+
+    // Find the first non-proxy blossom URL
+    let blossomUrl = ''
+    for (const url of video.urls) {
+      if (!url.includes('?origin=')) {
+        const { sha256 } = extractBlossomHash(url)
+        if (sha256) {
+          blossomUrl = url
+          break
+        }
+      }
+    }
+
+    if (!blossomUrl) return
+
+    const { sha256, ext } = extractBlossomHash(blossomUrl)
+    if (!sha256) return
+
+    const blossomMirrorServers = config.blossomServers?.filter(server =>
+      server.tags.includes('mirror')
+    )
+
+    if (!blossomMirrorServers || blossomMirrorServers.length === 0) {
+      // Show toast or message that no mirror servers are configured
+      return
+    }
+
+    setIsMirroring(true)
+
+    try {
+      // Create a BlobDescriptor for the video
+      const blob: BlobDescriptor = {
+        url: blossomUrl,
+        sha256: sha256,
+        size: 0, // Size unknown for URL-based videos
+        type: video.mimeType || `video/${ext || 'mp4'}`,
+        uploaded: Date.now(),
+      } as BlobDescriptor
+
+      await mirrorBlobsToServers({
+        mirrorServers: blossomMirrorServers.map(s => s.url),
+        blob,
+        signer: async draft => await user.signer.signEvent(draft),
+      })
+
+      // Show success message (you might want to add a toast here)
+    } catch (error) {
+      console.error('Failed to mirror video:', error)
+      // Show error message (you might want to add a toast here)
+    } finally {
+      setIsMirroring(false)
+    }
+  }
+
   // Build share URL
   const baseUrl = typeof window !== 'undefined' ? window.location.origin : ''
   const videoUrl = `${baseUrl}/video/${nevent || ''}`
@@ -253,7 +341,7 @@ export function VideoPage() {
   }
 
   return (
-    <div className="max-w-[140rem] mx-auto sm:py-6">
+    <div className="max-w-[140rem] mx-auto sm:py-4">
       {/*video && (
         <div className="md:px-6 lg:flex-row">
           <VideoPlayer
@@ -451,7 +539,34 @@ export function VideoPage() {
           )}
         </div>
 
-        <div className="w-full lg:w-96">
+        <div className="w-full lg:w-96 p-2 md:p-0 space-y-4">
+          {video && blossomServerCount === 1 && (
+            <Alert>
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>Limited Availability</AlertTitle>
+              <AlertDescription className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <span className="flex-1">
+                  This video is only available on 1 blossom server. Consider mirroring it to your
+                  servers.
+                </span>
+                <Button
+                  onClick={handleMirror}
+                  disabled={isMirroring || !user}
+                  size="sm"
+                  className="sm:ml-4 shrink-0 sm:self-center"
+                >
+                  {isMirroring ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Mirroring...
+                    </>
+                  ) : (
+                    'Mirror'
+                  )}
+                </Button>
+              </AlertDescription>
+            </Alert>
+          )}
           <VideoSuggestions
             currentVideoId={video?.id}
             authorPubkey={video?.pubkey}

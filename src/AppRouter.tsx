@@ -11,6 +11,7 @@ import { UploadPage } from '@/pages/UploadPage'
 import PlaylistPage from '@/pages/Playlists'
 import SinglePlaylistPage from '@/pages/SinglePlaylistPage'
 import { ShortsPage } from './pages/ShortsPage'
+import { ShortsVideoPage } from './pages/ShortsVideoPage'
 import SettingsPage from './pages/settings/SettingsPage'
 
 export function AppRouter() {
@@ -21,6 +22,7 @@ export function AppRouter() {
         <Route path="/" element={<MainLayout />}>
           <Route index element={<HomePage />} />
           <Route path="/shorts" element={<ShortsPage />} />
+          <Route path="/short/:nevent" element={<ShortsVideoPage />} />
           <Route path="/subscriptions" element={<SubscriptionsPage />} />
           <Route path="/liked-videos" element={<LikedVideosPage />} />
           <Route path="/video/:nevent" element={<VideoPage />} />

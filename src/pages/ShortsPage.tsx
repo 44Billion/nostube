@@ -38,7 +38,7 @@ export function ShortsPage() {
   }, [inView, exhausted, loadMore])
 
   return (
-    <div className="sm:px-4 sm:py-6">
+    <div className="sm:px-4 sm:py-4">
       <VideoGrid videos={videos} isLoading={loading} showSkeletons={true} layoutMode="vertical" />
 
       <div ref={loadMoreRef} className="w-full py-8 flex items-center justify-center">

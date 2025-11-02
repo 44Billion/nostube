@@ -3,7 +3,6 @@ import { Button } from '@/components/ui/button'
 import { ThemeToggle } from '@/components/ThemeToggle'
 import { MenuIcon, Upload } from 'lucide-react'
 import { Link } from 'react-router-dom'
-import { SearchBar } from './SearchBar'
 import { useAppContext } from '@/hooks/useAppContext'
 
 export function Header() {
@@ -11,10 +10,10 @@ export function Header() {
 
   return (
     <header
-      className="border-b sticky top-0 bg-background z-50"
+      className="sticky top-0 bg-background z-50"
       style={{ paddingTop: 'env(safe-area-inset-top, 0)' }}
     >
-      <div className={`w-full px-4 h-16 flex items-center justify-between`}>
+      <div className={`w-full px-4 py-2 flex items-center justify-between`}>
         <div className="flex items-center gap-2">
           <Button variant="ghost" size="icon" onClick={toggleSidebar}>
             <MenuIcon />

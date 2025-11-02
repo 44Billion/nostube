@@ -40,7 +40,7 @@ export function HomePage() {
   if (!videos) return null
 
   return (
-    <div className="sm:px-4 sm:py-6">
+    <div className="sm:px-4 sm:py-4">
       <VideoGrid videos={videos} isLoading={loading} showSkeletons={true} layoutMode="horizontal" />
 
       {/* Infinite scroll trigger */}

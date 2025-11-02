@@ -84,16 +84,16 @@ export function VideoGrid({
       const wideCols = getCols('horizontal')
       const portraitCols = getCols('vertical')
       return (
-        <div className="flex flex-col gap-8">
+        <div className="flex flex-col gap-4">
           {chunk(Array.from({ length: 24 }), wideCols).map((row, i) => (
-            <div key={'wide-skel-' + i} className={`grid gap-6 ${gridColsClass(wideCols)}`}>
+            <div key={'wide-skel-' + i} className={`grid gap-4 ${gridColsClass(wideCols)}`}>
               {row.map((_, j) => (
                 <VideoCardSkeleton key={j} format="horizontal" />
               ))}
             </div>
           ))}
           {chunk(Array.from({ length: 24 }), portraitCols).map((row, i) => (
-            <div key={'portrait-skel-' + i} className={`grid gap-6 ${gridColsClass(portraitCols)}`}>
+            <div key={'portrait-skel-' + i} className={`grid gap-4 ${gridColsClass(portraitCols)}`}>
               {row.map((_, j) => (
                 <VideoCardSkeleton key={j} format="vertical" />
               ))}
@@ -109,7 +109,7 @@ export function VideoGrid({
     return (
       <div
         className={cn(
-          'grid gap-6',
+          'grid gap-4',
           isShort
             ? 'grid-cols-1 sm:grid-cols-2 md:grid-cols-3  lg:grid-cols-4 xl:grid-cols-6 2xl:grid-cols-8'
             : isHorizontal
@@ -147,7 +147,7 @@ export function VideoGrid({
     for (let i = 0; i < maxRows; i++) {
       if (wideRows[i]) {
         rows.push(
-          <div key={'wide-' + i} className={`grid gap-6 ${gridColsClass(getCols('horizontal'))}`}>
+          <div key={'wide-' + i} className={`grid gap-4 ${gridColsClass(getCols('horizontal'))}`}>
             {wideRows[i].map(video => (
               <VideoCard key={video.id} video={video} format="horizontal" />
             ))}
@@ -174,7 +174,7 @@ export function VideoGrid({
   return (
     <div
       className={cn(
-        'grid gap-6',
+        'grid gap-4',
         isShort
           ? 'grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 2xl:grid-cols-8'
           : isHorizontal

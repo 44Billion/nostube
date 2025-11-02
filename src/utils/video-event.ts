@@ -52,7 +52,7 @@ function createSearchIndex(video: VideoEvent): string {
  * Extract SHA256 hash and file extension from a Blossom URL
  * Blossom URLs have format: https://server.com/{sha256}.{ext}
  */
-function extractBlossomHash(url: string): { sha256?: string; ext?: string } {
+export function extractBlossomHash(url: string): { sha256?: string; ext?: string } {
   try {
     const urlObj = new URL(url)
     const pathname = urlObj.pathname
@@ -78,6 +78,7 @@ function extractBlossomHash(url: string): { sha256?: string; ext?: string } {
 /**
  * Generate proxy URLs for video URLs when proxy servers are configured
  * Format: https://proxyserver.com/{sha256}.{ext}?origin={protocol+hostname}
+ * If the proxy server origin matches the original URL origin, the origin parameter is omitted
  */
 function generateProxyUrls(
   originalUrls: string[],
@@ -106,8 +107,26 @@ function generateProxyUrls(
       for (const proxyServer of proxyServers) {
         // Ensure proxy server URL doesn't end with /
         const baseUrl = proxyServer.url.replace(/\/$/, '')
-        const proxyUrl = `${baseUrl}/${sha256}.${ext}?origin=${encodeURIComponent(originBase)}`
-        proxyUrls.push(proxyUrl)
+        
+        // Extract proxy server origin
+        let proxyOrigin = ''
+        try {
+          const proxyUrlObj = new URL(baseUrl)
+          proxyOrigin = `${proxyUrlObj.protocol}//${proxyUrlObj.hostname}`
+        } catch {
+          // If URL parsing fails, skip this proxy server
+          continue
+        }
+        
+        // If the origin matches the proxy server, use direct URL without origin parameter
+        if (originBase === proxyOrigin) {
+          const directUrl = `${baseUrl}/${sha256}.${ext}`
+          proxyUrls.push(directUrl)
+        } else {
+          // Otherwise, generate proxy URL with origin parameter
+          const proxyUrl = `${baseUrl}/${sha256}.${ext}?origin=${encodeURIComponent(originBase)}`
+          proxyUrls.push(proxyUrl)
+        }
       }
     }
   }

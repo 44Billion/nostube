@@ -30,6 +30,9 @@ export function VideoCard({ video, hideAuthor, format = 'square' }: VideoCardPro
 
   const hoverPreviewEnabled = false
 
+  // Determine navigation path based on video type
+  const videoPath = video.type === 'shorts' ? `/short/${video.link}` : `/video/${video.link}`
+
   const handleMouseEnter = () => {
     // don't show hover preview for video with content warning
     if (video.contentWarning) return
@@ -60,7 +63,7 @@ export function VideoCard({ video, hideAuthor, format = 'square' }: VideoCardPro
       onMouseLeave={handleMouseLeave}
     >
       <div className="p-0">
-        <Link to={`/video/${video.link}`}>
+        <Link to={videoPath}>
           <div className="w-full overflow-hidden rounded-lg relative">
             <img
               src={imageProxyVideoPreview(video.images[0])}
@@ -120,7 +123,7 @@ export function VideoCard({ video, hideAuthor, format = 'square' }: VideoCardPro
               </Link>
             )}
             <div className="min-w-0 flex-1">
-              <Link to={`/video/${video.link}`}>
+              <Link to={videoPath}>
                 <h3 className="font-medium line-clamp-2 break-all">{video.title}</h3>
               </Link>
 
