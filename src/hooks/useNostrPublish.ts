@@ -51,19 +51,12 @@ export function useNostrPublish(): PublishResult {
       // Publish to relays (simplified - in a real implementation you'd use a relay pool)
       const relaysToUse = args.relays || config.relays.map(r => r.url)
 
-      // For now, we'll just log the publish attempt
-      // In a full implementation, you'd connect to WebSocket relays and publish
-      console.log('Publishing event to relays:', relaysToUse)
-      console.log('Event:', signedEvent)
-
-      // TODO better use an actionHub here
       await relayPool.publish(relaysToUse, signedEvent)
 
       return signedEvent
     } catch (err) {
       const error = err instanceof Error ? err : new Error('Failed to publish event')
       setError(error)
-      console.error('Failed to publish event:', error)
       throw error
     } finally {
       setIsPending(false)

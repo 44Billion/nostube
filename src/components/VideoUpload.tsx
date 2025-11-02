@@ -170,8 +170,6 @@ export function VideoUpload() {
           ['published_at', nowInSecs().toString()],
           ['duration', uploadInfo.duration?.toString() || '0'],
           imetaTag,
-          // TODO remove
-          // ['text-track', 'https://temp-st.apps2.slidestr.net/3ef2be82896a81037d4f31f789e5f3fc670f291fe18484f700557fc6bf82cfaa.vtt', 'en-US'],
           ...(contentWarningEnabled
             ? [['content-warning', contentWarningReason.trim() ? contentWarningReason : 'NSFW']]
             : []),
@@ -204,7 +202,6 @@ export function VideoUpload() {
 
       // Navigate to home or videos page since we don't have the event ID yet
       navigate('/')
-      console.log(event)
 
       // Reset form
       setTitle('')
@@ -213,8 +210,8 @@ export function VideoUpload() {
       setThumbnail(null)
       setTags([])
       setTagInput('')
-    } catch (error) {
-      console.error('Upload failed:', error)
+    } catch {
+      // Upload failed - error state is handled by uploadState
     }
   }
 

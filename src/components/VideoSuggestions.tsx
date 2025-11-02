@@ -143,7 +143,7 @@ export function VideoSuggestions({
 
     for (const event of events) {
       if (blockedPubkeys && blockedPubkeys[event.pubkey]) continue
-      const processed = processEvent(event, readRelays, config.blossomServers) // TODO use currect relays from eventstore
+      const processed = processEvent(event, readRelays, config.blossomServers)
       if (processed && processed.id !== currentVideoId && !seenIds.has(processed.id)) {
         processedVideos.push(processed)
         seenIds.add(processed.id)

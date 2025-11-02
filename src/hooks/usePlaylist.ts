@@ -52,7 +52,6 @@ export function usePlaylists() {
     const needLoad = playlistEvents.length === 0 && !!user?.pubkey && !hasLoadedOnce
 
     if (needLoad) {
-      console.log('Loading user playlists...')
       setIsLoading(true)
       const load$ = loader()
 
@@ -62,8 +61,7 @@ export function usePlaylists() {
           setIsLoading(false)
           setHasLoadedOnce(true)
         },
-        error: error => {
-          console.error('Failed to load playlists:', error)
+        error: () => {
           setIsLoading(false)
           setHasLoadedOnce(true)
         },
@@ -78,9 +76,9 @@ export function usePlaylists() {
     const name = titleTag ? titleTag[1] : 'Untitled Playlist'
     const description = descTag ? descTag[1] : undefined
 
-    // Get video references from 'a' tags
+    // Get video references from 'a' tags (NIP-51 format)
     const videos: Video[] = event.tags
-      .filter(t => t[0] === 'a') // TODO check kinds
+      .filter(t => t[0] === 'a')
       .map(t => ({
         kind: parseInt(t[1].split(':')[0], 10),
         id: t[1].split(':')[1], // Extract note ID from "1:<note-id>"
@@ -262,15 +260,12 @@ export function useUserPlaylists(pubkey?: string) {
     const needLoad = playlistEvents.length === 0 && !!pubkey && !hasLoadedOnce
 
     if (needLoad) {
-      console.log('using loader')
       const load$ = loader()
 
       load$.subscribe(e => eventStore.add(e))
       setHasLoadedOnce(true)
     }
   }, [playlistEvents, pubkey, hasLoadedOnce, loader])
-
-  console.log(playlistEvents)
 
   const playlists = playlistEvents?.map(event => {
     const titleTag = event.tags.find(t => t[0] === 'title')

@@ -35,8 +35,8 @@ const accountManager = new AccountManager()
 registerCommonAccountTypes(accountManager)
 
 // Restore accounts from localStorage on initialization
-restoreAccountsToManager(accountManager).catch(error => {
-  console.error('Failed to restore accounts on initialization:', error)
+restoreAccountsToManager(accountManager).catch(() => {
+  // Failed to restore accounts - user will need to login again
 })
 
 // Account persistence will be handled in login actions and account switcher
@@ -45,12 +45,6 @@ const factory = new EventFactory({
   // use the active signer from the account manager
   signer: accountManager.signer,
 })
-
-// Initialize relay pool with default relays
-console.log(
-  'Initializing relay pool with relays:',
-  presetRelays.map(r => r.url)
-)
 
 // Account persistence is handled directly in login actions and account switcher
 // No need for a separate listener component
