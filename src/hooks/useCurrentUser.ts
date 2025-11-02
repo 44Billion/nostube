@@ -59,7 +59,7 @@ export function useCurrentUser() {
     }
   }
 
-  const author = useProfile({ pubkey: user?.pubkey || '' })
+  const author = useProfile(user?.pubkey ? { pubkey: user.pubkey } : undefined)
 
   return {
     user,

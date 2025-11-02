@@ -2,15 +2,15 @@ import { Link, useParams } from 'react-router-dom'
 import { useEventStore } from 'applesauce-react/hooks'
 import { useObservableState } from 'observable-hooks'
 import { nip19 } from 'nostr-tools'
+import { decodeAddressPointer } from '@/lib/nip19'
 import { of } from 'rxjs'
 import { Skeleton } from '@/components/ui/skeleton'
 import { processEvents } from '@/utils/video-event'
-import { useAppContext } from '@/hooks/useAppContext'
+import { useAppContext, useProfile } from '@/hooks'
 import { VideoGrid } from '@/components/VideoGrid'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { imageProxy } from '@/lib/utils'
 import { useMemo } from 'react'
-import { useProfile } from '@/hooks/useProfile'
 import { nprofileFromPubkey } from '@/lib/nprofile'
 
 function isNeventPointer(ptr: unknown): ptr is { id: string } {
@@ -32,13 +32,11 @@ export default function SinglePlaylistPage() {
   const { config } = useAppContext()
   const readRelays = config.relays.filter(r => r.tags.includes('read')).map(r => r.url)
 
-  // Decode nip19 (nevent or naddr)
-  let playlistPointer: unknown = null
-  try {
-    playlistPointer = nip19.decode(nip19param ?? '').data
-  } catch {
-    // ignore
-  }
+  // Decode nip19 (naddr)
+  const playlistPointer = useMemo(() => {
+    if (!nip19param) return null
+    return decodeAddressPointer(nip19param)
+  }, [nip19param])
 
   // Get playlist event from EventStore
   const playlistObservable = useMemo(() => {
@@ -61,7 +59,7 @@ export default function SinglePlaylistPage() {
   const playlistEvent = useObservableState(playlistObservable)
   const isLoadingPlaylist = playlistObservable && !playlistEvent
 
-  const metadata = useProfile({ pubkey: playlistEvent?.pubkey || '' })
+  const metadata = useProfile(playlistEvent?.pubkey ? { pubkey: playlistEvent.pubkey } : undefined)
   const name = metadata?.display_name || metadata?.name || playlistEvent?.pubkey.slice(0, 8)
 
   // Parse playlist info and video references

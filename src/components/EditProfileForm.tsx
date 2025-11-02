@@ -15,11 +15,8 @@ import {
 } from '@/components/ui/form'
 import { Switch } from '@/components/ui/switch'
 import { Loader2, Upload } from 'lucide-react'
-import { useCurrentUser } from '@/hooks/useCurrentUser'
-import { useNostrPublish } from '@/hooks/useNostrPublish'
-import { useToast } from '@/hooks/useToast'
+import { useCurrentUser, useNostrPublish, useToast, useAppContext } from '@/hooks'
 import { useEventStore } from 'applesauce-react/hooks'
-import { useAppContext } from '@/hooks/useAppContext'
 import { z } from 'zod'
 import { nowInSecs } from '@/lib/utils'
 

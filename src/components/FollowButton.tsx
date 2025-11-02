@@ -1,12 +1,10 @@
-import { useCurrentUser } from '@/hooks/useCurrentUser'
+import { useCurrentUser, useNostrPublish, useAppContext } from '@/hooks'
 import { useEventStore, useEventModel } from 'applesauce-react/hooks'
-import { useNostrPublish } from '@/hooks/useNostrPublish'
 import { ContactsModel } from 'applesauce-core/models'
 import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { UserPlusIcon, UserCheckIcon } from 'lucide-react'
 import { cn, nowInSecs } from '@/lib/utils'
-import { useAppContext } from '@/hooks/useAppContext'
 
 interface FollowButtonProps {
   pubkey: string

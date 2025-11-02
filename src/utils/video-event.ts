@@ -1,4 +1,4 @@
-import { ReportedPubkeys } from '@/hooks/useReportedPubkeys'
+import type { ReportedPubkeys } from '@/hooks'
 import { getTypeForKind, VideoType } from '@/lib/video-types'
 import { blurHashToDataURL } from '@/workers/blurhashDataURL'
 import { nip19 } from 'nostr-tools'

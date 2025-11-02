@@ -1,14 +1,13 @@
 import { useState } from 'react'
-import { useAppContext } from '@/hooks/useAppContext'
+import { useAppContext, useUserRelays, useCurrentUser } from '@/hooks'
 import { RelayTag } from '@/contexts/AppContext'
+import { normalizeRelayUrl } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { XIcon, Cog } from 'lucide-react'
 import { presetRelays } from '@/App'
-import { useUserRelays } from '@/hooks/useUserRelays'
-import { useCurrentUser } from '@/hooks/useCurrentUser'
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -79,15 +78,6 @@ export function RelaySettingsSection() {
           : r
       ),
     }))
-  }
-
-  const normalizeRelayUrl = (url: string): string => {
-    const trimmed = url.trim()
-    if (!trimmed) return trimmed
-    if (trimmed.includes('://')) {
-      return trimmed
-    }
-    return `wss://${trimmed}`
   }
 
   const availableTags: RelayTag[] = ['read', 'write']

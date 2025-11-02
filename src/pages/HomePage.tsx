@@ -4,8 +4,7 @@ import { InfiniteScrollTrigger } from '@/components/InfiniteScrollTrigger'
 import { useInfiniteTimeline } from '@/nostr/useInfiniteTimeline'
 import { videoTypeLoader } from '@/nostr/loaders'
 import { TimelineLoader } from 'applesauce-loaders/loaders'
-import { useInfiniteScroll } from '@/hooks/useInfiniteScroll'
-import { useReadRelays } from '@/hooks/useReadRelays'
+import { useInfiniteScroll, useReadRelays } from '@/hooks'
 
 export function HomePage() {
   const relays = useReadRelays()

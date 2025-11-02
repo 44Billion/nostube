@@ -10,16 +10,15 @@ import { formatDistance } from 'date-fns'
 import { useEffect, useState, useMemo, useRef, useCallback } from 'react'
 import { processEvent, VideoEvent, processEvents } from '@/utils/video-event'
 import { nip19 } from 'nostr-tools'
-import { EventPointer } from 'nostr-tools/nip19'
+import { decodeEventPointer } from '@/lib/nip19'
+import { combineRelays } from '@/lib/utils'
 import { Skeleton } from '@/components/ui/skeleton'
-import { useAppContext } from '@/hooks/useAppContext'
-import { useProfile } from '@/hooks/useProfile'
+import { useAppContext, useProfile, useReportedPubkeys } from '@/hooks'
 import { createEventLoader, createTimelineLoader } from 'applesauce-loaders/loaders'
 import { ImageIcon, MessageCircle, ChevronDown, Share2 } from 'lucide-react'
 import { imageProxy } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { getKindsForType } from '@/lib/video-types'
-import { useReportedPubkeys } from '@/hooks/useReportedPubkeys'
 import { nprofileFromEvent } from '@/lib/nprofile'
 
 function ShortVideoItem({
@@ -250,20 +249,14 @@ export function ShortsVideoPage() {
 
   const eventPointer = useMemo(() => {
     if (!nevent) return null
-    try {
-      return nip19.decode(nevent).data as EventPointer
-    } catch {
-      return null
-    }
+    return decodeEventPointer(nevent)
   }, [nevent])
 
   // Get relays from nevent if available, otherwise use config relays
   const relaysToUse = useMemo(() => {
     const neventRelays = eventPointer?.relays || []
     // Combine nevent relays (prioritized) with user read relays
-    const combined = [...neventRelays, ...readRelays]
-    // Remove duplicates
-    return [...new Set(combined)]
+    return combineRelays([neventRelays, readRelays])
   }, [eventPointer, readRelays])
 
   const loader = useMemo(

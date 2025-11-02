@@ -1,11 +1,9 @@
 import { processEvents } from '@/utils/video-event'
-import { useReportedPubkeys } from '@/hooks/useReportedPubkeys'
+import { useReportedPubkeys, useAppContext, useMissingVideos } from '@/hooks'
 import { TimelineLoader } from 'applesauce-loaders/loaders'
 import { NostrEvent } from 'nostr-tools'
 import { useCallback, useMemo, useState } from 'react'
 import { insertEventIntoDescendingList } from 'nostr-tools/utils'
-import { useAppContext } from '@/hooks/useAppContext'
-import { useMissingVideos } from '@/hooks/useMissingVideos'
 
 export function useInfiniteTimeline(loader?: TimelineLoader, readRelays: string[] = []) {
   const blockedPubkeys = useReportedPubkeys()

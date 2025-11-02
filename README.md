@@ -1,5 +1,5 @@
-# MKStack
+# nostube
 
-Template for building Nostr client application with React 18.x, TailwindCSS 3.x, Vite, shadcn/ui, and Nostrify.
+A Nostr-based video sharing platform built with React 18.x, TailwindCSS 3.x, Vite, shadcn/ui, and Applesauce.
 
-protrait videos in 2/3 format
+Support for both landscape and portrait videos (shorts in 9:16 format).

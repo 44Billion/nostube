@@ -11,8 +11,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog.tsx'
-import { toast } from '@/hooks/useToast.ts'
-import { useLoginActions } from '@/hooks/useLoginActions'
+import { toast, useLoginActions } from '@/hooks'
 import { generateSecretKey, nip19 } from 'nostr-tools'
 
 interface SignupDialogProps {

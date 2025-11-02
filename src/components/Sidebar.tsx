@@ -1,11 +1,9 @@
 import { Home, Play, Users, History, ListVideo, ThumbsUp, Clock, Scissors, Cog } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { Separator } from '@/components/ui/separator'
-import { useCurrentUser } from '@/hooks/useCurrentUser'
-import { useAppContext } from '@/hooks/useAppContext'
+import { useCurrentUser, useAppContext, useReadRelays } from '@/hooks'
 import { nip19 } from 'nostr-tools'
 import { cn } from '@/lib/utils'
-import { useReadRelays } from '@/hooks/useReadRelays'
 import { useMemo } from 'react'
 
 export function Sidebar() {
@@ -80,31 +78,31 @@ export function Sidebar() {
                 </Link>
               ))}
             </nav>
-
-            <Separator className="my-4" />
-            <h2 className="text-xs font-semibold uppercase text-muted-foreground px-4 mb-2">
-              Configuration
-            </h2>
-            <nav className="px-2">
-              {configItems.map(item => (
-                <Link
-                  key={item.name}
-                  to={item.disabled ? '#' : item.href}
-                  onClick={item.disabled ? undefined : toggleSidebar}
-                  className={cn(
-                    'flex items-center gap-4 py-2 px-3 rounded-lg transition-colors',
-                    item.disabled
-                      ? 'pointer-events-none opacity-50 cursor-not-allowed'
-                      : 'hover:bg-accent'
-                  )}
-                >
-                  <item.icon className="h-5 w-5" />
-                  <span className="font-medium">{item.name}</span>
-                </Link>
-              ))}
-            </nav>
           </>
         )}
+
+        <Separator className="my-4" />
+        <h2 className="text-xs font-semibold uppercase text-muted-foreground px-4 mb-2">
+          Configuration
+        </h2>
+        <nav className="px-2">
+          {configItems.map(item => (
+            <Link
+              key={item.name}
+              to={item.disabled ? '#' : item.href}
+              onClick={item.disabled ? undefined : toggleSidebar}
+              className={cn(
+                'flex items-center gap-4 py-2 px-3 rounded-lg transition-colors',
+                item.disabled
+                  ? 'pointer-events-none opacity-50 cursor-not-allowed'
+                  : 'hover:bg-accent'
+              )}
+            >
+              <item.icon className="h-5 w-5" />
+              <span className="font-medium">{item.name}</span>
+            </Link>
+          ))}
+        </nav>
       </div>
     </div>
   )

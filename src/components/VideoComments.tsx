@@ -1,7 +1,6 @@
 import { useEventStore } from 'applesauce-react/hooks'
 import { useObservableState } from 'observable-hooks'
-import { useCurrentUser } from '@/hooks/useCurrentUser'
-import { useNostrPublish } from '@/hooks/useNostrPublish'
+import { useCurrentUser, useNostrPublish, useProfile, useAppContext } from '@/hooks'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
@@ -10,11 +9,9 @@ import { formatDistance } from 'date-fns'
 import { NostrEvent } from 'nostr-tools'
 import { imageProxy, nowInSecs } from '@/lib/utils'
 import { Link } from 'react-router-dom'
-import { useProfile } from '@/hooks/useProfile'
 import { of } from 'rxjs'
 import { switchMap, catchError, map } from 'rxjs/operators'
 import { createTimelineLoader } from 'applesauce-loaders/loaders'
-import { useAppContext } from '@/hooks/useAppContext'
 
 interface Comment {
   id: string

@@ -14,11 +14,11 @@ import { Separator } from '@/components/ui/separator'
 import { useEffect, useState, useMemo, useRef } from 'react'
 import { processEvent } from '@/utils/video-event'
 import { nip19 } from 'nostr-tools'
-import { EventPointer } from 'nostr-tools/nip19'
+import { decodeEventPointer } from '@/lib/nip19'
+import { combineRelays } from '@/lib/utils'
 import { Skeleton } from '@/components/ui/skeleton'
 import { CollapsibleText } from '@/components/ui/collapsible-text'
-import { useAppContext } from '@/hooks/useAppContext'
-import { useCurrentUser } from '@/hooks/useCurrentUser'
+import { useAppContext, useCurrentUser, useNostrPublish, useProfile, useMissingVideos } from '@/hooks'
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -35,11 +35,9 @@ import {
   AlertDialogAction,
   AlertDialogCancel,
 } from '@/components/ui/alert-dialog'
-import { useNostrPublish } from '@/hooks/useNostrPublish'
 import { MoreVertical, TrashIcon } from 'lucide-react'
 import { imageProxy, nowInSecs } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
-import { useProfile } from '@/hooks/useProfile'
 import { createEventLoader } from 'applesauce-loaders/loaders'
 import { AddToPlaylistButton } from '@/components/AddToPlaylistButton'
 import { ButtonWithReactions } from '@/components/ButtonWithReactions'
@@ -49,7 +47,6 @@ import { AlertCircle, Loader2 } from 'lucide-react'
 import { mirrorBlobsToServers } from '@/lib/blossom-upload'
 import { extractBlossomHash } from '@/utils/video-event'
 import { BlobDescriptor } from 'blossom-client-sdk'
-import { useMissingVideos } from '@/hooks/useMissingVideos'
 
 // Custom hook for debounced play position storage
 function useDebouncedPlayPositionStorage(
@@ -118,17 +115,15 @@ export function VideoPage() {
   const eventStore = useEventStore()
   const { pool } = useAppContext()
   const navigate = useNavigate()
-  const eventPointer = useMemo(() => nip19.decode(nevent ?? '').data as EventPointer, [nevent])
+  const eventPointer = useMemo(() => decodeEventPointer(nevent ?? ''), [nevent])
   const { markVideoAsMissing, clearMissingVideo, isVideoMissing } = useMissingVideos()
 
   // Get relays from nevent if available, otherwise use config relays
   const relaysToUse = useMemo(() => {
     const readRelays = config.relays.filter(r => r.tags.includes('read')).map(r => r.url)
-    const neventRelays = eventPointer.relays || []
+    const neventRelays = eventPointer?.relays || []
     // Combine nevent relays (prioritized) with user read relays
-    const combined = [...neventRelays, ...readRelays]
-    // Remove duplicates
-    return [...new Set(combined)]
+    return combineRelays([neventRelays, readRelays])
   }, [eventPointer, config.relays])
 
   const loader = useMemo(
@@ -138,6 +133,7 @@ export function VideoPage() {
 
   // Use EventStore to get the video event with fallback to loader
   const videoObservable = useMemo(() => {
+    if (!eventPointer) return of(null)
     return eventStore.event(eventPointer.id).pipe(
       switchMap(event => {
         if (event) {
@@ -170,7 +166,7 @@ export function VideoPage() {
 
   const isLoading = !video && videoEvent === undefined
 
-  const metadata = useProfile({ pubkey: video?.pubkey || '' })
+  const metadata = useProfile(video?.pubkey ? { pubkey: video.pubkey } : undefined)
   const authorName = metadata?.display_name || metadata?.name || video?.pubkey?.slice(0, 8) || ''
 
   useEffect(() => {
@@ -356,7 +352,7 @@ export function VideoPage() {
   }, [shareUrl, fullUrl, title, thumbnailUrl])
 
   if (!isLoading && !video) {
-    const isMissing = isVideoMissing(eventPointer.id)
+    const isMissing = eventPointer && isVideoMissing(eventPointer.id)
     return (
       <div className="max-w-4xl mx-auto p-6">
         <Alert variant={isMissing ? 'destructive' : 'default'}>
@@ -370,7 +366,7 @@ export function VideoPage() {
                 ? 'This video has been marked as unavailable because it could not be loaded from any source. It will be automatically retried later.'
                 : 'This video could not be found. It may have been deleted or the event ID is incorrect.'}
             </p>
-            {isMissing && (
+            {isMissing && eventPointer && (
               <Button
                 onClick={() => {
                   clearMissingVideo(eventPointer.id)

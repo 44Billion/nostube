@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { type Playlist, type Video, usePlaylists } from '@/hooks/usePlaylist'
+import { usePlaylists, type Playlist, type Video } from '@/hooks'
 import { CreatePlaylistDialog } from './CreatePlaylistDialog'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'

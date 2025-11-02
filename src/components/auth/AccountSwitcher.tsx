@@ -13,9 +13,8 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar.tsx'
 import { useNavigate } from 'react-router-dom'
 import { imageProxy } from '@/lib/utils'
 import { useAccountManager, useActiveAccount } from 'applesauce-react/hooks'
-import { useProfile } from '@/hooks/useProfile'
+import { useProfile, removeAccountFromStorage, saveActiveAccount } from '@/hooks'
 import { getDisplayName } from 'applesauce-core/helpers'
-import { removeAccountFromStorage, saveActiveAccount } from '@/hooks/useAccountPersistence'
 import type { IAccount } from 'applesauce-accounts'
 
 interface AccountSwitcherProps {

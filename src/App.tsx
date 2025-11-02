@@ -10,7 +10,7 @@ import { EventFactory } from 'applesauce-factory'
 import { registerCommonAccountTypes } from 'applesauce-accounts/accounts'
 import { eventStore } from '@/nostr/core'
 import { RelaySyncProvider } from '@/components/RelaySyncProvider'
-import { restoreAccountsToManager } from '@/hooks/useAccountPersistence'
+import { restoreAccountsToManager, useBatchedProfileLoader } from '@/hooks'
 
 export const presetRelays: Relay[] = [
   { url: 'wss://ditto.pub/relay', name: 'Ditto', tags: ['read'] },
@@ -49,6 +49,11 @@ const factory = new EventFactory({
 // Account persistence is handled directly in login actions and account switcher
 // No need for a separate listener component
 
+function BatchedProfileLoaderInit() {
+  useBatchedProfileLoader()
+  return null
+}
+
 export function App() {
   return (
     <ThemeProvider defaultTheme="system" storageKey="nostr-tube-theme">
@@ -62,6 +67,7 @@ export function App() {
             <FactoryProvider factory={factory}>
               <RelaySyncProvider>
                 <TooltipProvider>
+                  <BatchedProfileLoaderInit />
                   <Suspense>
                     <AppRouter />
                   </Suspense>

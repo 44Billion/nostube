@@ -16,10 +16,8 @@ import {
   CommandItem,
   CommandList,
 } from '@/components/ui/command'
-import { useCurrentUser } from '@/hooks/useCurrentUser'
-import { usePlaylists } from '@/hooks/usePlaylist'
+import { useCurrentUser, usePlaylists, useToast } from '@/hooks'
 import { Skeleton } from '@/components/ui/skeleton'
-import { useToast } from '@/hooks/useToast'
 
 interface AddToPlaylistButtonProps {
   videoId: string

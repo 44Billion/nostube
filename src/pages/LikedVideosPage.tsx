@@ -1,13 +1,10 @@
 import { VideoGrid } from '@/components/VideoGrid'
 import { VideoGridSkeleton } from '@/components/VideoGridSkeleton'
-import { useAppContext } from '@/hooks/useAppContext'
-import { useLikedEvents } from '@/hooks/useLikedEvents'
-import { useReadRelays } from '@/hooks/useReadRelays'
+import { useAppContext, useLikedEvents, useReadRelays, useReportedPubkeys } from '@/hooks'
 import { useMemo, useEffect, useState, useRef } from 'react'
 import { useEventStore } from 'applesauce-react/hooks'
 import { createEventLoader } from 'applesauce-loaders/loaders'
 import { processEvents } from '@/utils/video-event'
-import { useReportedPubkeys } from '@/hooks/useReportedPubkeys'
 
 export function LikedVideosPage() {
   const { data: likedEventIds = [], isLoading: isLoadingReactions } = useLikedEvents()

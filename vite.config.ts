@@ -21,8 +21,10 @@ export default defineConfig({
       external: ['@rollup/rollup-linux-x64-gnu'],
       output: {
         inlineDynamicImports: false,
+        // Increase minimum chunk size to reduce number of small files
+        chunkFileNames: 'assets/[name]-[hash].js',
         manualChunks: (id) => {
-          // Only chunk the very largest libraries to avoid initialization issues
+          // Vendor chunks for node_modules
           if (id.includes('node_modules')) {
             // Separate only the largest video libraries
             if (id.includes('hls.js')) return 'vendor-hls'
@@ -31,9 +33,47 @@ export default defineConfig({
             // Everything else stays together in vendor to ensure proper initialization
             return 'vendor'
           }
+          
+          // Combine small hooks into one chunk
+          if (id.includes('/src/hooks/') && !id.includes('node_modules')) {
+            return 'hooks'
+          }
+          
+          // Combine utility files and lib
+          if ((id.includes('/src/lib/') || id.includes('/src/utils/')) && !id.includes('node_modules')) {
+            return 'utils'
+          }
+          
+          // Combine nostr utilities
+          if (id.includes('/src/nostr/') && !id.includes('node_modules')) {
+            return 'nostr'
+          }
+          
+          // Combine contexts
+          if (id.includes('/src/contexts/') && !id.includes('node_modules')) {
+            return 'contexts'
+          }
+          
+          // Group small UI components together
+          if (id.includes('/src/components/ui/') && !id.includes('node_modules')) {
+            // Group by related components to avoid circular deps
+            if (id.includes('button') || id.includes('badge') || id.includes('card') || 
+                id.includes('label') || id.includes('separator')) {
+              return 'ui-basic'
+            }
+            if (id.includes('dialog') || id.includes('alert') || id.includes('sheet') || 
+                id.includes('dropdown') || id.includes('popover')) {
+              return 'ui-overlays'
+            }
+            if (id.includes('form') || id.includes('input') || id.includes('textarea') || 
+                id.includes('checkbox') || id.includes('select')) {
+              return 'ui-forms'
+            }
+            return 'ui-misc'
+          }
         },
       },
     },
-    chunkSizeWarningLimit: 1100, // Large vendor bundle to avoid initialization issues
+    chunkSizeWarningLimit: 1100,
   },
 })

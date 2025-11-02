@@ -1,5 +1,5 @@
 import { Check, ChevronsUpDown, Wifi, Plus } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { cn, normalizeRelayUrl } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import {
   Command,
@@ -36,20 +36,6 @@ export function RelaySelector(props: RelaySelectorProps) {
   const [inputValue, setInputValue] = useState('')
 
   const selectedOption = presetRelays.find(option => option.url === selectedRelay.url)
-
-  // Function to normalize relay URL by adding wss:// if no protocol is present
-  const normalizeRelayUrl = (url: string): string => {
-    const trimmed = url.trim()
-    if (!trimmed) return trimmed
-
-    // Check if it already has a protocol
-    if (trimmed.includes('://')) {
-      return trimmed
-    }
-
-    // Add wss:// prefix
-    return `wss://${trimmed}`
-  }
 
   // Handle adding a custom relay
   const handleAddCustomRelay = (url: string) => {

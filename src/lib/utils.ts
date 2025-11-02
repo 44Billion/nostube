@@ -7,21 +7,24 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 /**
+ * Normalizes a relay URL by adding wss:// prefix if no protocol is present
+ */
+export function normalizeRelayUrl(url: string): string {
+  const trimmed = url.trim()
+  if (!trimmed) return trimmed
+
+  if (trimmed.includes('://')) {
+    return trimmed
+  }
+
+  return `wss://${trimmed}`
+}
+
+/**
  * Takes a string[][] of relays sets and normalizes the url and return a unique list of relays
  */
 export function mergeRelays(relaySets: string[][]): string[] {
   const normalizedRelays = new Set<string>()
-
-  const normalizeRelayUrl = (url: string): string => {
-    const trimmed = url.trim()
-    if (!trimmed) return trimmed
-
-    if (trimmed.includes('://')) {
-      return trimmed
-    }
-
-    return `wss://${trimmed}`
-  }
 
   for (const set of relaySets) {
     for (const relayUrl of set) {
@@ -30,6 +33,14 @@ export function mergeRelays(relaySets: string[][]): string[] {
   }
 
   return Array.from(normalizedRelays)
+}
+
+/**
+ * Combines multiple relay arrays, removes duplicates, and returns prioritized list
+ * First arrays have priority (will appear first in the result)
+ */
+export function combineRelays(relayArrays: string[][]): string[] {
+  return [...new Set(relayArrays.flat())]
 }
 
 export function formatFileSize(bytes: number): string {
