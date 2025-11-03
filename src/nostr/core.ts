@@ -56,12 +56,6 @@ NostrConnectSigner.publishMethod = publishMethod
 // Default relays for video content - these will be overridden by user config
 export const DEFAULT_RELAYS = ['wss://relay.damus.io', 'wss://nos.lol', 'wss://relay.nostr.band']
 
-// Function to update relays from user config
-export function updateRelayPool(_relayUrls: string[]) {
-  // The RelayPool will automatically connect to the relays specified in the loader
-  // No action needed - loaders use the relay URLs directly
-}
-
 // ---- loader factory ----
 //
 // Each distinct filter set gets its own loader instance (thus own cursor).

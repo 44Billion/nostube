@@ -4,13 +4,12 @@ import { useCurrentUser, useNostrPublish, useProfile, useAppContext } from '@/ho
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useEffect } from 'react'
 import { formatDistance } from 'date-fns'
 import { NostrEvent } from 'nostr-tools'
 import { imageProxy, nowInSecs } from '@/lib/utils'
 import { Link } from 'react-router-dom'
-import { of } from 'rxjs'
-import { switchMap, catchError, map } from 'rxjs/operators'
+import { map } from 'rxjs/operators'
 import { createTimelineLoader } from 'applesauce-loaders/loaders'
 
 interface Comment {
@@ -127,30 +126,19 @@ export function VideoComments({ videoId, link, authorPubkey }: VideoCommentsProp
     [videoId]
   )
 
-  const loader = useMemo(
-    () => createTimelineLoader(pool, readRelays, filters, { limit: 50, eventStore }),
-    [pool, readRelays, filters]
-  )
+  // Load comments from relays when filters change
+  useEffect(() => {
+    const loader = createTimelineLoader(pool, readRelays, filters, { limit: 50, eventStore })
+    const subscription = loader().subscribe(e => eventStore.add(e))
 
-  // Use EventStore timeline to get comments for this video with fallback to loader
+    // Cleanup subscription on unmount or filters change
+    return () => subscription.unsubscribe()
+  }, [pool, readRelays, filters, eventStore])
+
+  // Use EventStore timeline to get comments for this video
   const comments$ = useMemo(() => {
-    return eventStore.timeline(filters).pipe(
-      switchMap(events => {
-        if (events && events.length > 0) {
-          return of(events)
-        }
-        // If no events in store, subscribe to loader and add events to store
-        loader().subscribe(e => eventStore.add(e))
-        return of([]) // Return empty array initially, timeline will update when events are added
-      }),
-      catchError(() => {
-        // If eventStore fails, subscribe to loader and add events to store
-        loader().subscribe(e => eventStore.add(e))
-        return of([]) // Return empty array initially, timeline will update when events are added
-      }),
-      map(events => events.map(mapEventToComment))
-    )
-  }, [eventStore, filters, loader])
+    return eventStore.timeline(filters).pipe(map(events => events.map(mapEventToComment)))
+  }, [eventStore, filters])
 
   const comments = useObservableState(comments$, [])
 

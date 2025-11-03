@@ -11,31 +11,28 @@ export function useFollowedAuthors() {
   const { pool, config } = useAppContext()
   const eventStore = useEventStore()
 
-  const pubkey = useMemo(() => {
-    return user?.pubkey ? [user.pubkey] : null
-  }, [user?.pubkey])
-
   // Use ContactsModel to get user's contact list
-  const contacts = useEventModel(ContactsModel, pubkey)
+  // ContactsModel expects a tuple [pubkey] or null/undefined
+  const contacts = useEventModel(ContactsModel, user?.pubkey ? [user.pubkey] : null)
 
   const readRelays = useMemo(() => {
     return config.relays.filter(relay => relay.tags.includes('read')).map(relay => relay.url)
   }, [config.relays])
 
   useEffect(() => {
-    if (contacts && contacts.length === 0 && user?.pubkey) {
-      console.log('contacts', contacts)
-
+    // Only load if user exists and contacts event is not already in store
+    if (user?.pubkey && !eventStore.hasReplaceable(kinds.Contacts, user.pubkey)) {
       const loader = createAddressLoader(pool)
-      loader({
+      const subscription = loader({
         kind: kinds.Contacts,
-        pubkey: user?.pubkey,
+        pubkey: user.pubkey,
         relays: readRelays,
       }).subscribe(e => eventStore.add(e))
-    }
-  }, [contacts])
 
-  console.log('contacts', contacts)
+      // Cleanup subscription on unmount or user change
+      return () => subscription.unsubscribe()
+    }
+  }, [user?.pubkey, eventStore, pool, readRelays])
 
   const followedPubkeys = useMemo(() => {
     return contacts || []

@@ -1,7 +1,7 @@
 import { BrowserRouter } from 'react-router-dom'
 import { AccountsProvider, EventStoreProvider } from 'applesauce-react'
 import { AccountManager } from 'applesauce-accounts'
-import { EventStore } from 'applesauce-core'
+import { eventStore } from '@/nostr/core'
 import { AppProvider } from '@/components/AppProvider'
 import { AppConfig } from '@/contexts/AppContext'
 
@@ -11,7 +11,6 @@ interface TestAppProps {
 
 export function TestApp({ children }: TestAppProps) {
   const accountManager = new AccountManager()
-  const eventStore = new EventStore()
 
   const defaultConfig: AppConfig = {
     theme: 'light',

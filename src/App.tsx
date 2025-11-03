@@ -9,7 +9,6 @@ import { AccountManager } from 'applesauce-accounts'
 import { EventFactory } from 'applesauce-factory'
 import { registerCommonAccountTypes } from 'applesauce-accounts/accounts'
 import { eventStore } from '@/nostr/core'
-import { RelaySyncProvider } from '@/components/RelaySyncProvider'
 import { restoreAccountsToManager, useBatchedProfileLoader } from '@/hooks'
 
 export const presetRelays: Relay[] = [
@@ -65,14 +64,12 @@ export function App() {
         <AccountsProvider manager={accountManager}>
           <EventStoreProvider eventStore={eventStore}>
             <FactoryProvider factory={factory}>
-              <RelaySyncProvider>
-                <TooltipProvider>
-                  <BatchedProfileLoaderInit />
-                  <Suspense>
-                    <AppRouter />
-                  </Suspense>
-                </TooltipProvider>
-              </RelaySyncProvider>
+              <TooltipProvider>
+                <BatchedProfileLoaderInit />
+                <Suspense>
+                  <AppRouter />
+                </Suspense>
+              </TooltipProvider>
             </FactoryProvider>
           </EventStoreProvider>
         </AccountsProvider>

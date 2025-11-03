@@ -64,14 +64,15 @@ export default function useVideoTimeline(type: VideoType, authors?: string[]) {
   const videos =
     useObservableMemo(() => {
       return videos$
-    }, []) || []
+    }, [videos$]) || []
 
   useEffect(() => {
     const lastLoaded = lastLoadedTimestamp.get(hash)
 
-    if (lastLoaded == undefined || Date.now() - lastLoaded < 60000) {
+    // Load only if never loaded or if last load was more than 60 seconds ago
+    if (lastLoaded === undefined || Date.now() - lastLoaded > 60000) {
       setVideosLoading(true)
-      createTimelineLoader(pool, readRelays, filters, { limit: 50 })()
+      const subscription = createTimelineLoader(pool, readRelays, filters, { limit: 50 })()
         .pipe(
           finalize(() => {
             lastLoadedTimestamp.set(hash, Date.now())
@@ -81,7 +82,9 @@ export default function useVideoTimeline(type: VideoType, authors?: string[]) {
         .subscribe(e => {
           eventStore.add(e)
         })
-      return
+
+      // Cleanup subscription on unmount or dependency change
+      return () => subscription.unsubscribe()
     }
   }, [eventStore, hash, filters, pool, readRelays])
 

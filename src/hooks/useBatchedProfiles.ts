@@ -36,8 +36,6 @@ export function useBatchedProfileLoader() {
 
       if (pubkeysToLoad.length === 0) return
 
-      console.log(`[Batch Profile Loader] Loading ${pubkeysToLoad.length} profiles`)
-
       // Load all profiles in a single request
       const loader = createTimelineLoader(
         pool,

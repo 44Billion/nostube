@@ -1,7 +1,7 @@
-import { ReactNode, useState, useCallback } from 'react'
+import { ReactNode, useState, useCallback, useEffect } from 'react'
 import { useLocalStorage } from '@/hooks/useLocalStorage'
 import { AppContext, Relay, type AppConfig, type AppContextType } from '@/contexts/AppContext'
-import { RelayPool } from 'applesauce-relay'
+import { relayPool } from '@/nostr/core'
 
 interface AppProviderProps {
   children: ReactNode
@@ -19,8 +19,13 @@ export function AppProvider(props: AppProviderProps) {
   // App configuration state with localStorage persistence
   const [config, setConfig] = useLocalStorage<AppConfig>(storageKey, defaultConfig)
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
-  const pool = new RelayPool()
-  pool.group(config.relays.map(r => r.url))
+
+  // Configure relayPool when relays change
+  useEffect(() => {
+    // RelayPool doesn't have a clear method, just reconfigure the group
+    relayPool.group(config.relays.map(r => r.url))
+  }, [config.relays])
+
   //const { user } = useCurrentUser();
   // const userRelays = useUserRelays(user?.pubkey);
 
@@ -88,7 +93,7 @@ export function AppProvider(props: AppProviderProps) {
     presetRelays,
     isSidebarOpen,
     toggleSidebar,
-    pool,
+    pool: relayPool,
   }
 
   return <AppContext.Provider value={appContextValue}>{children}</AppContext.Provider>

@@ -2,7 +2,7 @@ import { processEvents } from '@/utils/video-event'
 import { useReportedPubkeys, useAppContext, useMissingVideos } from '@/hooks'
 import { TimelineLoader } from 'applesauce-loaders/loaders'
 import { NostrEvent } from 'nostr-tools'
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useMemo, useState, useRef, useEffect } from 'react'
 import { insertEventIntoDescendingList } from 'nostr-tools/utils'
 
 export function useInfiniteTimeline(loader?: TimelineLoader, readRelays: string[] = []) {
@@ -13,15 +13,30 @@ export function useInfiniteTimeline(loader?: TimelineLoader, readRelays: string[
   const [events, setEvents] = useState<NostrEvent[]>([])
   const [loading, setLoading] = useState(false)
 
+  // Store subscription reference for cleanup
+  const subscriptionRef = useRef<{ unsubscribe: () => void } | null>(null)
+
+  // Cleanup subscription on unmount
+  useEffect(() => {
+    return () => {
+      subscriptionRef.current?.unsubscribe()
+    }
+  }, [])
+
   const missingVideoIds = useMemo(() => {
     const missingMap = getAllMissingVideos()
     return new Set(Object.keys(missingMap))
   }, [getAllMissingVideos])
+
   const next = useCallback(() => {
     if (!loader) return
+
+    // Cleanup previous subscription before creating a new one
+    subscriptionRef.current?.unsubscribe()
+
     setLoading(true)
-    loader().subscribe({
-      next: evnet => setEvents(prev => Array.from(insertEventIntoDescendingList(prev, evnet))),
+    subscriptionRef.current = loader().subscribe({
+      next: event => setEvents(prev => Array.from(insertEventIntoDescendingList(prev, event))),
       complete: () => {
         setLoading(false)
       },

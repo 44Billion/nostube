@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useMemo, useState, useCallback } from 'react'
+import React, { createContext, useContext, useMemo, useState, useCallback, useRef, useEffect } from 'react'
 import { VideoType } from '@/contexts/AppContext'
 import { VideoEvent } from '@/utils/video-event'
 import { useEventStore } from 'applesauce-react/hooks'
@@ -11,7 +11,6 @@ import { hashObjectBigInt } from '@/lib/utils'
 import { Filter } from 'nostr-tools'
 
 const lastLoadedTimestamp = new Map<string, number>()
-let logSeq = 0
 
 interface TimelineState {
   videos: VideoEvent[]
@@ -40,11 +39,24 @@ export function VideoTimelineProvider({ children }: { children: React.ReactNode 
     hasMore: true,
   })
 
+  // Store subscription references for cleanup
+  const videosSubscriptionRef = useRef<{ unsubscribe: () => void } | null>(null)
+  const loaderSubscriptionRef = useRef<{ unsubscribe: () => void } | null>(null)
+
+  // Cleanup subscriptions on unmount
+  useEffect(() => {
+    return () => {
+      videosSubscriptionRef.current?.unsubscribe()
+      loaderSubscriptionRef.current?.unsubscribe()
+    }
+  }, [])
+
   // Function to load timeline - sets parameters for the hook to process
   const loadTimeline = useCallback(
     (type: VideoType, authors?: string[]) => {
-      const seq = ++logSeq
-      console.log(`[${seq}] loadTimeline called with type:`, type, 'authors:', authors)
+      // Cleanup previous subscriptions
+      videosSubscriptionRef.current?.unsubscribe()
+      loaderSubscriptionRef.current?.unsubscribe()
 
       // Reset state when loading new timeline
       setTimelineState({
@@ -52,8 +64,6 @@ export function VideoTimelineProvider({ children }: { children: React.ReactNode 
         videosLoading: true,
         hasMore: true,
       })
-
-      console.log(`[${seq}] processing timeline for type:`, type, 'authors:', authors)
 
       // Create filters
       const filter: Filter = authors
@@ -73,8 +83,8 @@ export function VideoTimelineProvider({ children }: { children: React.ReactNode 
           map(events => processEvents(events, readRelays, blockedPubkeys, config.blossomServers))
         )
 
-      // Subscribe to videos observable
-      videos$.subscribe(events => {
+      // Subscribe to videos observable with cleanup tracking
+      videosSubscriptionRef.current = videos$.subscribe(events => {
         setTimelineState(prev => ({
           ...prev,
           videos: events,
@@ -84,36 +94,20 @@ export function VideoTimelineProvider({ children }: { children: React.ReactNode 
 
       // Load from relays if needed
       const lastLoaded = lastLoadedTimestamp.get(hash)
-      console.log(
-        `[${seq}] lastLoaded:`,
-        lastLoaded,
-        'time since last load:',
-        lastLoaded ? Date.now() - lastLoaded : 'undefined'
-      )
 
       // Reload only if never loaded or if last load was more than 60s ago
       if (lastLoaded === undefined || Date.now() - lastLoaded > 60000) {
-        console.log(`[${seq}] loading new events from relays, hash:`, hash, 'filter:', filter)
         setTimelineState(prev => ({ ...prev, videosLoading: true }))
-        createTimelineLoader(pool, readRelays, filter, { limit: 50 })()
+        loaderSubscriptionRef.current = createTimelineLoader(pool, readRelays, filter, { limit: 50 })()
           .pipe(
             finalize(() => {
-              const finalizeSeq = ++logSeq
-              console.log(
-                `[${finalizeSeq}] loader finalize called, setting timestamp for hash:`,
-                hash
-              )
               lastLoadedTimestamp.set(hash, Date.now())
               setTimelineState(prev => ({ ...prev, videosLoading: false }))
             })
           )
           .subscribe(e => {
-            // const subscribeSeq = ++logSeq;
-            // console.log(`[${subscribeSeq}] loader event received:`, e.id);
             eventStore.add(e)
           })
-      } else {
-        console.log(`[${seq}] skipping load, last loaded was recent enough`)
       }
     },
     [blockedPubkeys, eventStore, config.relays, pool]
