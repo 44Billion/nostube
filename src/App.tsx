@@ -12,7 +12,11 @@ import {
 } from 'applesauce-react/providers'
 import { AccountManager } from 'applesauce-accounts'
 import { EventFactory } from 'applesauce-core'
-import { registerCommonAccountTypes } from 'applesauce-accounts/accounts'
+import {
+  registerCommonAccountTypes,
+  ExtensionAccount,
+} from 'applesauce-accounts/accounts'
+import { ExtensionSigner } from 'applesauce-signers'
 // Import applesauce-common to register EventFactory extensions (note, reaction, etc.)
 import 'applesauce-common'
 import { eventStore } from '@/nostr/core'
@@ -70,6 +74,37 @@ const defaultConfig: AppConfig = {
 const accountManager = new AccountManager()
 
 registerCommonAccountTypes(accountManager)
+
+// Auto-login with NIP-07 peekPublicKey
+async function checkAutoLogin() {
+  const nostr = (window as any).nostr
+  if (nostr?.peekPublicKey) {
+    try {
+      const pubkey = await nostr.peekPublicKey()
+      if (pubkey && typeof pubkey === 'string') {
+        // Find if we already have this account
+        let account = accountManager.accounts.find(
+          a => a.pubkey === pubkey && a.type === 'extension'
+        )
+
+        if (!account) {
+          // If not, create it
+          account = new ExtensionAccount(pubkey, new ExtensionSigner())
+          accountManager.addAccount(account)
+        }
+
+        if (accountManager.active?.id !== account.id) {
+          accountManager.setActive(account)
+          console.log(`[Auto-Login] Active account set to ${pubkey} via peekPublicKey`)
+        }
+      }
+    } catch (err) {
+      // Ignore errors from peekPublicKey
+    }
+  }
+}
+
+checkAutoLogin()
 
 const factory = new EventFactory({
   // use the active signer from the account manager

@@ -179,14 +179,37 @@ export async function restoreAccount(
           console.warn('Extension not available, cannot restore extension account')
           return null
         }
-        const signer = new ExtensionSigner()
-        const pubkey = await signer.getPublicKey()
+
+        const nostr = (window as any).nostr
+        let pubkey: string | undefined
+
+        // Try peekPublicKey first if available to avoid popups
+        if (nostr?.peekPublicKey) {
+          try {
+            pubkey = await nostr.peekPublicKey()
+          } catch (err) {
+            // Ignore errors
+          }
+        }
+
+        // If peek failed or not available, fall back to getPublicKey
+        // but ONLY if we were already expecting this specific pubkey
+        if (!pubkey) {
+          try {
+            const signer = new ExtensionSigner()
+            pubkey = await signer.getPublicKey()
+          } catch (err) {
+            console.error('Failed to get public key from extension:', err)
+            return null
+          }
+        }
+
         // Verify pubkey matches stored pubkey
         if (pubkey !== accountData.pubkey) {
           console.warn('Extension pubkey does not match stored pubkey')
           return null
         }
-        return new ExtensionAccount(pubkey, signer)
+        return new ExtensionAccount(pubkey, new ExtensionSigner())
       }
 
       case 'nsec': {
