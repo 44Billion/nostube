@@ -354,6 +354,46 @@ export async function restoreAccountsToManager(accountManager: AccountManager): 
   }
 }
 
+/** Keep the host-managed NIP-07 identity active without opening a signer prompt. */
+export function startManagedExtensionLogin(accountManager: AccountManager): () => void {
+  let pending = false
+
+  const subscription = accountManager.active$.subscribe(active => {
+    if (active || pending) return
+
+    const nostr = (
+      window as Window & {
+        nostr?: { peekPublicKey?: () => Promise<string | undefined> }
+      }
+    ).nostr
+    if (typeof nostr?.peekPublicKey !== 'function') return
+
+    pending = true
+    void nostr
+      .peekPublicKey()
+      .then(pubkey => {
+        if (!/^[0-9a-f]{64}$/.test(pubkey || '') || accountManager.active) return
+
+        let account = accountManager.accounts.find(
+          candidate => candidate.pubkey === pubkey && candidate.type === 'extension'
+        )
+        if (!account) {
+          account = new ExtensionAccount(pubkey!, new ExtensionSigner())
+          accountManager.addAccount(account)
+          saveAccountToStorage(account, 'extension')
+        }
+        accountManager.setActive(account)
+        saveActiveAccount(account.pubkey)
+      })
+      .catch(() => undefined)
+      .finally(() => {
+        pending = false
+      })
+  })
+
+  return () => subscription.unsubscribe()
+}
+
 /**
  * Clear all persisted account data
  */
